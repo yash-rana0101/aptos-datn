@@ -1,59 +1,75 @@
-import "./globals.css";
-
-import { ThemeProvider } from "@/components/ThemeProvider";
-import { WalletProvider } from "@/components/WalletProvider";
-import { Toaster } from "@/components/ui/toaster";
-import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
-import { Inter as FontSans } from "next/font/google";
-import { PropsWithChildren } from "react";
-import { RootHeader } from "@/components/RootHeader";
-import { WrongNetworkAlert } from "@/components/WrongNetworkAlert";
-import { QueryProvider } from "@/components/QueryProvider";
-import { RootFooter } from "@/components/RootFooter";
-import { TopBanner } from "@/components/TopBanner";
+import { Inter, Roboto_Mono } from "next/font/google";
+import "./globals.css";
+import { Providers } from "./providers";
+import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/theme-provider";
+import { QueryProvider } from "@/lib/providers/QueryProvider";
+import { AuthProvider } from "@/lib/providers/AuthProvider";
+import ProtectedRoute from "@/components/ProtectedRoute/ProtectedRoute";
+import Navbar from "@/components/common/Navbar";
+import Footer from "@/components/common/Footer";
 
-const fontSans = FontSans({
+const geistSans = Inter({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
-  variable: "--font-sans",
+});
+
+const geistMono = Roboto_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Aptos Full Stack Demo",
-  description: "An demo of a full stack app on Aptos",
+  title: "DATN - Decentralized Autonomous Trade Network.",
+  description: "The Best Decentalized Goods Trade Network.",
+  icons: {
+    icon: "/xtra-games.png", // ✅ Correct path (public/xtra-games.png)
+  },
 };
 
-const RootLayout = ({ children }: PropsWithChildren) => {
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={cn(
-          "flex justify-center min-h-screen bg-background font-sans antialiased",
-          fontSans.variable
-        )}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <Providers>
           <QueryProvider>
-            <WalletProvider>
-              <main className="flex flex-col w-full max-w-[1000px] p-6 pb-12 md:px-8 gap-6">
-                <WrongNetworkAlert />
-                <TopBanner />
-                <RootHeader />
-                {children}
+            <AuthProvider>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="dark"
+                enableSystem
+                disableTransitionOnChange
+              >
+                <div className="flex flex-col min-h-screen">
+                  {/* Navigation Bar */}
+                  <Navbar />
+
+                  {/* Main Content */}
+                  <main className="flex-1">
+                    <ProtectedRoute>{children}</ProtectedRoute>
+                  </main>
+
+                  {/* Footer */}
+                  <Footer />
+                </div>
                 <Toaster />
-                <RootFooter />
-              </main>
-            </WalletProvider>
+              </ThemeProvider>
+            </AuthProvider>
           </QueryProvider>
-        </ThemeProvider>
+        </Providers>
       </body>
     </html>
   );
-};
-
-export default RootLayout;
+}
