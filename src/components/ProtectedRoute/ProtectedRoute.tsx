@@ -34,7 +34,7 @@ export default function ProtectedRoute({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, userProfile } = useAuth();
   const [loading, setLoading] = useState<boolean>(true);
 
   // Check if current route is public
@@ -145,8 +145,8 @@ export default function ProtectedRoute({
       );
     }
 
-    // Deny access if not a seller
-    if (user && user.role !== 'SELLER') {
+    // Deny access if not a seller (role 2 = Seller)
+    if (userProfile && userProfile.role !== 2) {
       return (
         <div className="min-h-screen bg-black flex items-center justify-center px-4">
           <div className="text-center max-w-md glass-neo p-8 rounded-2xl border border-gray-800">

@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useOrder } from '@/lib/hooks/useOrderQuery';
+import { useOrder, useProduct } from '@/lib/hooks';
 import { useAuth } from '@/lib/providers/AuthProvider';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -32,8 +32,77 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
-  // Fetch order from API
-  const { data: order, isLoading, error } = useOrder(id, !authLoading && isAuthenticated);
+  // Fetch order from blockchain
+  const { data: orderData, isLoading: orderLoading, error: orderError } = useOrder(id, !authLoading && isAuthenticated);
+  
+  // Fetch product details if order exists
+  const { data: productData } = useProduct(orderData?.productAddress || '', !!orderData?.productAddress);
+
+  // Map blockchain data to UI format
+  type UIOrder = {
+    id: string;
+    status: string;
+    createdAt: string;
+    deliveryCode?: string;
+    product: {
+      id: string;
+      name: string;
+      description: string;
+      price: string;
+      images: string[];
+      category: string;
+      quantity: number;
+    };
+    buyer: {
+      name: string;
+      email?: string;
+      wallet: string;
+    };
+    transaction?: {
+      txHash?: string;
+      status?: string;
+    };
+  };
+
+  const order: UIOrder | null = React.useMemo(() => {
+    if (!orderData) return null;
+    
+    const statusMap: Record<number, string> = {
+      0: 'PROCESSING',
+      1: 'SHIPPED',
+      2: 'DELIVERED',
+      3: 'COMPLETED',
+      4: 'CANCELLED',
+    };
+
+    return {
+      id: orderData.orderAddress,
+      status: statusMap[orderData.status] || 'PROCESSING',
+      createdAt: new Date(orderData.createdAt).toISOString(),
+      deliveryCode: undefined, // Not in basic order, available in escrow
+      product: {
+        id: orderData.productAddress,
+        name: productData?.title || 'Loading...',
+        description: productData?.description || '',
+        price: (orderData.totalPrice / 100000000).toFixed(2), // Convert octas to APT
+        images: productData?.imageUrls || [],
+        category: productData?.category || 'General',
+        quantity: orderData.quantity,
+      },
+      buyer: {
+        name: 'Buyer', // Would need to fetch from profile contract
+        email: undefined,
+        wallet: orderData.buyerAddress,
+      },
+      transaction: {
+        txHash: undefined, // Not stored in order struct
+        status: orderData.isPaid ? 'confirmed' : 'pending',
+      },
+    };
+  }, [orderData, productData]);
+
+  const isLoading = orderLoading;
+  const error = orderError;
 
   // Redirect if not authenticated
   React.useEffect(() => {

@@ -5,14 +5,13 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import { Wallet, Info, X, ArrowRight } from 'lucide-react';
-import { useAuth } from '@/lib/providers/AuthProvider';
 import { RegistrationForm } from '@/components/auth/RegistrationForm';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { useUserProfile } from '@/lib/hooks/useProfileContract';
+import { cn } from '@/lib/utils';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { ArrowRight, Info, Wallet, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 interface WalletConnectModalProps {

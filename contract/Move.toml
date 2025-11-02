@@ -7,7 +7,7 @@ authors = []
 ecommerce_platform = "_"
 
 [dev-addresses]
-ecommerce_platform = "0x2b415d8d06da496020574740b9fd074aaf4f0dd0d29fab21e54f8e70dae05fc4"
+ecommerce_platform = "0xd8d5d43724c7140635f480fd9e4d32cb9b75f01615584ad63cc899d4aa29b89f"
 
 [dependencies]
 AptosFramework = { git = "https://github.com/aptos-labs/aptos-framework.git", rev = "mainnet", subdir = "aptos-framework" }
