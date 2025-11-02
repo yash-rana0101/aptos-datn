@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +26,7 @@ import Image from 'next/image';
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params);
+  const router = useRouter();
   const [selectedImage, setSelectedImage] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
 
@@ -240,14 +242,33 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 <Button
                   size="lg"
                   className="bg-[#C6D870] text-black hover:bg-[#B5C760] font-semibold"
+                  onClick={() => {
+                    // Navigate to checkout with product data
+                    const checkoutData = {
+                      productId: id,
+                      productName: product.name,
+                      price: product.price,
+                      quantity: 1,
+                      seller: product.seller,
+                      image: product.images?.[0] || ''
+                    };
+                    // Store in sessionStorage for checkout page
+                    sessionStorage.setItem('checkoutProduct', JSON.stringify(checkoutData));
+                    router.push('/checkout');
+                  }}
+                  disabled={!product.isAvailable || product.quantity === 0}
                 >
                   <ShoppingCart className="w-5 h-5 mr-2" />
-                  Buy Now
+                  {product.isAvailable && product.quantity > 0 ? 'Buy Now' : 'Out of Stock'}
                 </Button>
                 <Button
                   size="lg"
                   variant="outline"
                   className="border-[#C6D870] text-[#C6D870] hover:bg-[#C6D870]/10"
+                  onClick={() => {
+                    // TODO: Implement chat/messaging feature
+                    alert('Contact seller feature coming soon!');
+                  }}
                 >
                   <MessageCircle className="w-5 h-5 mr-2" />
                   Contact Seller

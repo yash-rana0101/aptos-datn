@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 
 export default function SearchPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
@@ -314,12 +316,15 @@ export default function SearchPage() {
         ) : allProducts?.length === 0 ? (
           <Card className="glass-neo p-12 border-gray-800 text-center">
             <p className="text-gray-400 mb-4">No products available yet</p>
-            <p className="text-gray-500 text-sm mb-2">
+            <p className="text-gray-500 text-sm">
               Products will appear here once sellers list them on the marketplace.
             </p>
-            <p className="text-yellow-500/70 text-xs mt-4">
-              ⚠️ Note: Product indexing is not yet implemented. Products will be visible after indexer setup.
-            </p>
+            <Button
+              onClick={() => router.push('/seller/products')}
+              className="mt-6 bg-[#C6D870] text-black hover:bg-[#B5C760]"
+            >
+              Become a Seller
+            </Button>
           </Card>
         ) : filteredProducts.length === 0 ? (
           <Card className="glass-neo p-12 border-gray-800 text-center">

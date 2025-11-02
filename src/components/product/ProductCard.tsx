@@ -8,6 +8,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   className,
   variant = 'default',
 }) => {
+  const router = useRouter();
   const isCompact = variant === 'compact';
   const isFeatured = variant === 'featured';
 
@@ -178,7 +180,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 className="bg-[#C6D870] text-black hover:bg-[#B5C760]"
                 onClick={(e) => {
                   e.preventDefault();
-                  // Handle buy action
+                  e.stopPropagation();
+                  // Navigate to product detail page
+                  router.push(`/product/${id}`);
                 }}
               >
                 Buy Now
