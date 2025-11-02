@@ -24,8 +24,8 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 
-export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = React.use(params);
+export default function ProductDetailPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const router = useRouter();
   const [selectedImage, setSelectedImage] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -128,7 +128,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   <Image
                     src={product.images[selectedImage]}
                     alt={product.name}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center text-gray-500">
@@ -138,7 +139,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 {/* Favorite Badge */}
                 <button
                   onClick={() => setIsFavorite(!isFavorite)}
-                  className="absolute top-4 right-4 p-3 rounded-full glass hover:bg-white/10 transition-all"
+                  className="absolute top-4 right-4 p-3 rounded-full glass hover:bg-white/10 transition-all z-10"
                 >
                   <Heart className={`w-6 h-6 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
                 </button>
@@ -151,7 +152,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     <button
                       key={index}
                       onClick={() => setSelectedImage(index)}
-                      className={`aspect-square rounded-lg overflow-hidden transition-all ${selectedImage === index
+                      className={`aspect-square rounded-lg overflow-hidden transition-all relative ${selectedImage === index
                         ? 'ring-2 ring-[#C6D870] ring-offset-2 ring-offset-black'
                         : 'opacity-50 hover:opacity-100'
                         }`}
@@ -159,7 +160,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                       <Image
                         src={image}
                         alt={`${product.name} ${index + 1}`}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
                       />
                     </button>
                   ))}
@@ -336,15 +338,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               {relatedProducts.map((relProduct) => (
                 <Link key={relProduct.id} href={`/product/${relProduct.id}`}>
                   <Card className="glass-neo p-4 border-gray-800 hover:border-[#C6D870]/30 transition-all group cursor-pointer">
-                    <div className="aspect-square bg-gray-700 rounded-lg mb-4 overflow-hidden">
+                    <div className="aspect-square bg-gray-700 rounded-lg mb-4 overflow-hidden relative">
                       {relProduct.images && relProduct.images.length > 0 ? (
                         <Image
                           src={relProduct.images[0]}
                           alt={relProduct.name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                          fill
+                          className="object-cover group-hover:scale-110 transition-transform"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-500 group-hover:scale-110 transition-transform">
+                        <div className="absolute inset-0 flex items-center justify-center text-gray-500 group-hover:scale-110 transition-transform">
                           <Package className="w-16 h-16" />
                         </div>
                       )}
