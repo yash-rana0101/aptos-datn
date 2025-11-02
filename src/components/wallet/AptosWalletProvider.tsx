@@ -14,17 +14,24 @@ interface AptosWalletProviderProps {
 }
 
 export function AptosWalletProvider({ children }: AptosWalletProviderProps) {
-  // For local network, use string "mainnet" - the wallet adapter accepts string literals
+  // For local network, use 'devnet' - it has better compatibility with local nodes
   // The actual contract calls will use localhost:8080 from aptos.ts configuration
-  const walletNetwork = NETWORK === 'local' ? 'mainnet' : NETWORK;
+  const walletNetwork = NETWORK === 'local' ? 'devnet' : NETWORK;
 
   return (
     <AptosWalletAdapterProvider
       autoConnect={true}
       dappConfig={{
-        network: walletNetwork as any, // Use as any to bypass type issues
+        network: walletNetwork as any,
+        // Skip keyless verification for local networks
+        aptosConnectDappId: undefined,
       }}
       onError={(error) => {
+        // Filter out keyless account errors for local development
+        if (error.message?.includes('keyless_account') || error.message?.includes('Groth16VerificationKey')) {
+          console.warn('Keyless account feature not available on local network - this is expected');
+          return;
+        }
         console.error('Wallet adapter error:', error);
       }}
     >

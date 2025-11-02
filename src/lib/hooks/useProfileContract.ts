@@ -116,9 +116,17 @@ export const useRegisterProfile = () => {
     mutationFn: async (params: RegisterProfileParams) => {
       if (!account) throw new Error('Wallet not connected');
 
-      const transaction = profileContract.registerProfile(params);
-      const response = await signAndSubmitTransaction(transaction);
-      return response;
+      try {
+        const transaction = profileContract.registerProfile(params);
+        const response = await signAndSubmitTransaction(transaction);
+        return response;
+      } catch (error: any) {
+        // Handle keyless account errors for local development
+        if (error.message?.includes('keyless_account') || error.message?.includes('Groth16VerificationKey')) {
+          throw new Error('Local network configuration issue. Please ensure your Petra wallet is connected to the correct network (Devnet or Testnet) for development.');
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       if (account?.address) {
