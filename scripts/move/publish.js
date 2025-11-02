@@ -29,6 +29,8 @@ async function publish() {
   const move = new cli.Move();
 
   try {
+    console.log('⚠️  You will be prompted to confirm the deployment.\n');
+    
     const response = await move.createObjectAndPublishPackage({
       packageDirectoryPath: "contract",
       addressName: "ecommerce_platform",
@@ -37,7 +39,10 @@ async function publish() {
       },
       extraArguments: [
         `--private-key=${process.env.NEXT_MODULE_PUBLISHER_ACCOUNT_PRIVATE_KEY}`,
-        `--url=${networkUrl}`
+        `--url=${networkUrl}`,
+        `--max-gas=300000`,  // Further increased gas limit
+        `--gas-unit-price=100`,
+        `--assume-yes`
       ],
     });
 

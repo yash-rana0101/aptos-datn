@@ -8,13 +8,14 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { useUserProfile } from '@/lib/hooks/useProfileContract';
+import type { UserProfile } from '@/lib/types/contracts';
 
 interface AuthContextValue {
   address: string | null;
   isConnected: boolean;
   isLoading: boolean;
   isAuthenticated: boolean;
-  userProfile: any;
+  userProfile: UserProfile | null;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -25,6 +26,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Fetch user profile from blockchain
   const { data: userProfile, isLoading } = useUserProfile(walletAddress);
+
+  // Debug log to verify data transformation
+  if (userProfile && process.env.NODE_ENV === 'development') {
+    console.log('[AuthProvider] ✅ User profile loaded:', {
+      name: userProfile.name,
+      role: userProfile.role === 1 ? 'Buyer' : userProfile.role === 2 ? 'Seller' : 'Unknown',
+      isActive: userProfile.isActive,
+    });
+  }
 
   const value: AuthContextValue = {
     address: walletAddress || null,

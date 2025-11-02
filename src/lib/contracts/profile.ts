@@ -120,31 +120,25 @@ export const getUserProfile = async (
       return null;
     }
 
-    // Parse the result based on Move struct
-    const [
-      name,
-      walletAddress,
-      country,
-      role,
-      email,
-      physicalAddress,
-      bio,
-      createdAt,
-      updatedAt,
-      isActive,
-    ] = result as [string, string, string, number, string, string, string, string, string, boolean];
-
+    // The Move contract returns a struct object with snake_case keys
+    const profile = result[0] as any;
+    
+    // Transform snake_case to camelCase
     return {
-      name,
-      walletAddress,
-      country,
-      role,
-      email,
-      physicalAddress,
-      bio,
-      createdAt: parseInt(createdAt),
-      updatedAt: parseInt(updatedAt),
-      isActive,
+      name: profile.name,
+      walletAddress: profile.wallet_address,
+      country: profile.country,
+      role: profile.role,
+      email: profile.email,
+      physicalAddress: profile.physical_address,
+      bio: profile.bio,
+      createdAt: typeof profile.created_at === 'string' 
+        ? parseInt(profile.created_at) 
+        : profile.created_at,
+      updatedAt: typeof profile.updated_at === 'string' 
+        ? parseInt(profile.updated_at) 
+        : profile.updated_at,
+      isActive: profile.is_active,
     };
   } catch (error) {
     console.error("Error fetching user profile:", error);
