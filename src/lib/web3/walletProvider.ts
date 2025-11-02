@@ -4,7 +4,12 @@
  */
 
 import { WalletProviderType } from './types';
-import WEB3_CONFIG from './config';
+
+// Storage keys for wallet data
+const STORAGE_KEYS = {
+  WALLET_ADDRESS: 'aptos_wallet_address',
+  WALLET_PUBLIC_KEY: 'aptos_wallet_public_key',
+} as const;
 
 // Petra Wallet types
 interface PetraWallet {
@@ -81,7 +86,8 @@ export class WalletProviderService {
 
       // Store in local storage
       if (typeof window !== 'undefined') {
-        localStorage.setItem(WEB3_CONFIG.STORAGE_KEYS.WALLET_ADDRESS, response.address);
+        localStorage.setItem(STORAGE_KEYS.WALLET_ADDRESS, response.address);
+        localStorage.setItem(STORAGE_KEYS.WALLET_PUBLIC_KEY, response.publicKey);
       }
 
       return response.address;
@@ -114,9 +120,8 @@ export class WalletProviderService {
     
     // Clear local storage
     if (typeof window !== 'undefined') {
-      localStorage.removeItem(WEB3_CONFIG.STORAGE_KEYS.WALLET_ADDRESS);
-      localStorage.removeItem(WEB3_CONFIG.STORAGE_KEYS.AUTH_TOKEN);
-      localStorage.removeItem(WEB3_CONFIG.STORAGE_KEYS.NONCE);
+      localStorage.removeItem(STORAGE_KEYS.WALLET_ADDRESS);
+      localStorage.removeItem(STORAGE_KEYS.WALLET_PUBLIC_KEY);
     }
   }
 
