@@ -80,6 +80,12 @@ module ecommerce_platform::product {
         product_objects: vector<address>,
     }
 
+    /// Global registry to track all products in the marketplace
+    struct GlobalProductRegistry has key {
+        /// Vector of all product object addresses
+        all_products: vector<address>,
+    }
+
     // ======================== Events ========================
     
     #[event]
@@ -132,7 +138,12 @@ module ecommerce_platform::product {
     // ======================== Initialization ========================
     
     /// Initialize module (called once on deployment)
-    fun init_module(_sender: &signer) {}
+    fun init_module(deployer: &signer) {
+        // Initialize global product registry
+        move_to(deployer, GlobalProductRegistry {
+            all_products: vector::empty<address>(),
+        });
+    }
 
     // ======================== Entry Functions (Write) ========================
     
@@ -152,7 +163,7 @@ module ecommerce_platform::product {
         total_quantity: u64,
         image_urls: vector<String>,
         category: String,
-    ) acquires SellerProductRegistry {
+    ) acquires SellerProductRegistry, GlobalProductRegistry {
         let sender_addr = signer::address_of(sender);
         
         // Validate seller profile exists and user is a seller
@@ -200,6 +211,10 @@ module ecommerce_platform::product {
         
         let registry = borrow_global_mut<SellerProductRegistry>(sender_addr);
         vector::push_back(&mut registry.product_objects, product_obj_addr);
+        
+        // Add to global product registry
+        let global_registry = borrow_global_mut<GlobalProductRegistry>(@ecommerce_platform);
+        vector::push_back(&mut global_registry.all_products, product_obj_addr);
         
         // Emit event
         event::emit(ProductCreatedEvent {
@@ -369,7 +384,7 @@ module ecommerce_platform::product {
     public entry fun delete_product(
         sender: &signer,
         product_obj: Object<Product>,
-    ) acquires Product {
+    ) acquires Product, GlobalProductRegistry {
         let sender_addr = signer::address_of(sender);
         let product_addr = object::object_address(&product_obj);
         
@@ -386,6 +401,13 @@ module ecommerce_platform::product {
         product.is_available = false;
         product.updated_at = timestamp::now_seconds();
         
+        // Remove from global registry
+        let global_registry = borrow_global_mut<GlobalProductRegistry>(@ecommerce_platform);
+        let (found, index) = vector::index_of(&global_registry.all_products, &product_addr);
+        if (found) {
+            vector::remove(&mut global_registry.all_products, index);
+        };
+        
         // Emit event
         event::emit(ProductDeletedEvent {
             product_obj_addr: product_addr,
@@ -395,6 +417,14 @@ module ecommerce_platform::product {
     }
 
     // ======================== View Functions (Read) ========================
+    
+    #[view]
+    /// Get all product addresses from the global registry
+    /// @return Vector of all product object addresses
+    public fun get_all_products(): vector<address> acquires GlobalProductRegistry {
+        let global_registry = borrow_global<GlobalProductRegistry>(@ecommerce_platform);
+        global_registry.all_products
+    }
     
     #[view]
     /// Get complete product information

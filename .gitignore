@@ -1,6 +1,6 @@
 # Aptos related files
 .aptos
-.env
+# .env
 contract/build
 
 # Logs
@@ -13,9 +13,9 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
-build
-dist-ssr
+# dist
+# build
+# dist-ssr
 *.local
 package-lock.json
 pnpm-lock.yaml
@@ -31,6 +31,6 @@ pnpm-lock.yaml
 *.sln
 *.sw?
 
-.next
+# .next
 
 target

@@ -195,6 +195,25 @@ export const getSellerProducts = async (
 };
 
 /**
+ * Get all products from global registry
+ */
+export const getAllProducts = async (): Promise<string[]> => {
+  try {
+    const result = await aptos.view({
+      payload: {
+        function: `${MODULES.PRODUCT}::get_all_products` as `${string}::${string}::${string}`,
+        functionArguments: [],
+      },
+    });
+
+    return result[0] as string[];
+  } catch (error) {
+    console.error("Error fetching all products:", error);
+    return [];
+  }
+};
+
+/**
  * Check if product is available
  */
 export const isProductAvailable = async (
