@@ -145,8 +145,8 @@ export default function ProtectedRoute({
       );
     }
 
-    // Deny access if not a seller
-    if (user && user.role !== 'SELLER') {
+    // Deny access if not a seller (check for SELLER role)
+    if (isAuthenticated && user?.role !== 2) { // 2 = SELLER role from blockchain
       return (
         <div className="min-h-screen bg-black flex items-center justify-center px-4">
           <div className="text-center max-w-md glass-neo p-8 rounded-2xl border border-gray-800">
@@ -156,12 +156,14 @@ export default function ProtectedRoute({
               </svg>
             </div>
             <h2 className="text-2xl font-bold text-white mb-3">Access Denied</h2>
-            <p className="text-gray-400 mb-6">This section is only available to sellers.</p>
+            <p className="text-gray-400 mb-6">
+              This section is only available to sellers. Your account is registered as a buyer.
+            </p>
             <button
-              onClick={() => window.location.href = '/'}
+              onClick={() => window.location.href = '/product'}
               className="px-6 py-3 bg-[#C6D870] text-black rounded-lg font-semibold hover:bg-[#B5C760] transition-colors"
             >
-              Go to Home
+              Browse Products
             </button>
           </div>
         </div>

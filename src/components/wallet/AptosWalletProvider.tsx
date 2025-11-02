@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect, useState } from 'react';
 import { AptosWalletAdapterProvider } from '@aptos-labs/wallet-adapter-react';
 import { NETWORK } from '@/constants';
 
@@ -14,18 +14,36 @@ interface AptosWalletProviderProps {
 }
 
 export function AptosWalletProvider({ children }: AptosWalletProviderProps) {
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component only renders on client side
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // For local network, use string "mainnet" - the wallet adapter accepts string literals
   // The actual contract calls will use localhost:8080 from aptos.ts configuration
   const walletNetwork = NETWORK === 'local' ? 'mainnet' : NETWORK;
 
+  // Don't render wallet provider until mounted (client-side only)
+  if (!mounted) {
+    return <>{children}</>;
+  }
+
   return (
     <AptosWalletAdapterProvider
-      autoConnect={true}
+      autoConnect={false}
       dappConfig={{
-        network: walletNetwork as any, // Use as any to bypass type issues
+        network: walletNetwork as any,
+        aptosConnectDappId: 'datn-ecommerce',
       }}
       onError={(error) => {
-        console.error('Wallet adapter error:', error);
+        // Suppress origin errors from wallet extensions
+        if (error?.message?.includes('origin') || error?.message?.includes('location')) {
+          console.warn('Wallet initialization warning (safe to ignore):', error.message);
+        } else {
+          console.error('Wallet adapter error:', error);
+        }
       }}
     >
       {children}

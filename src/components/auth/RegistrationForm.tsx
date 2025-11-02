@@ -13,6 +13,7 @@ import { useRegisterProfile } from '@/lib/hooks/useProfileContract';
 import { USER_ROLES } from '@/constants';
 import { Globe, Mail, Store, User, UserCircle, FileText } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface RegistrationFormProps {
   onSuccess?: () => void;
@@ -55,8 +56,21 @@ export function RegistrationForm({
         bio: formData.bio,
       });
       onSuccess?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration error:', error);
+
+      // Check if error is due to existing profile
+      if (error?.message?.includes('User profile already exists') ||
+        error?.message?.includes('PROFILE_ALREADY_EXISTS') ||
+        error?.message?.includes('already exists')) {
+        // Profile exists, treat as successful login
+        console.log('Profile already exists, proceeding to app...');
+        toast.success('Profile already exists! Logging you in...');
+        onSuccess?.();
+      } else {
+        // Show error toast for other errors
+        toast.error(error?.message || 'Registration failed. Please try again.');
+      }
     }
   };
 

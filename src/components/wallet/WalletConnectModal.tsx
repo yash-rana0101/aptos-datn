@@ -72,9 +72,19 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
         toast.info('No profile found. Please register to continue.');
         setShowRegistration(true);
       } else {
-        toast.success('Welcome back!');
+        // Profile exists - auto login
+        const roleName = profile.role === 2 ? 'seller' : 'buyer';
+        toast.success(`Welcome back, ${profile.name}!`);
         onClose();
-        setTimeout(() => router.push('/product'), 300);
+
+        // Redirect based on role
+        if (profile.role === 2) {
+          // Seller - go to seller dashboard
+          setTimeout(() => router.push('/seller'), 300);
+        } else {
+          // Buyer - go to products
+          setTimeout(() => router.push('/product'), 300);
+        }
       }
     }
   }, [connected, walletAddress, profile, profileLoading, checkingProfile, onClose, router]);
