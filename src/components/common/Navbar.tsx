@@ -12,9 +12,9 @@ import { cn } from '@/lib/utils';
 import Logo from './Logo';
 import { WalletButton } from '@/components/wallet/WalletButton';
 import { WalletConnectModal } from '@/components/wallet/WalletConnectModal';
-import { useWalletEvents } from '@/lib/web3';
 import { useAuth } from '@/lib/providers/AuthProvider';
-import { useLogout } from '@/lib/hooks/useAuthQuery';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { USER_ROLES } from '@/constants';
 import { Home, Package, Search, ShoppingBag, User, LogOut } from 'lucide-react';
 
 interface NavItem {
@@ -48,12 +48,9 @@ export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-  const { isAuthenticated, user } = useAuth();
-  const logoutMutation = useLogout();
+  const { isAuthenticated, userProfile } = useAuth();
+  const { disconnect } = useWallet();
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Setup wallet event listeners
-  useWalletEvents();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -73,11 +70,11 @@ export const Navbar: React.FC = () => {
 
   const handleLogout = async () => {
     try {
-      await logoutMutation.mutateAsync();
+      await disconnect();
       setShowProfileDropdown(false);
       router.push('/');
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error('Disconnect failed:', error);
     }
   };
 
@@ -92,7 +89,7 @@ export const Navbar: React.FC = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">
-            {(user && user.role === 'SELLER' ? sellerNavItems : navItems)
+            {(userProfile && userProfile.role === USER_ROLES.SELLER ? sellerNavItems : navItems)
               .filter(item => {
                 // Hide items that require auth if user is not authenticated
                 if (item.requiresAuth && !isAuthenticated) return false;
@@ -130,7 +127,7 @@ export const Navbar: React.FC = () => {
           {/* Right Side Actions */}
           <div className="flex items-center gap-3">
             {/* User Info (when authenticated) with Dropdown */}
-            {isAuthenticated && user && (
+            {isAuthenticated && userProfile && (
               <div className="hidden md:block relative" ref={dropdownRef}>
                 <button
                   onClick={() => setShowProfileDropdown(!showProfileDropdown)}
@@ -138,15 +135,15 @@ export const Navbar: React.FC = () => {
                 >
                   <div className="w-8 h-8 rounded-full bg-[#C6D870] flex items-center justify-center">
                     <span className="text-black font-semibold text-sm">
-                      {user.name.charAt(0).toUpperCase()}
+                      {userProfile.name.charAt(0).toUpperCase()}
                     </span>
                   </div>
                   <div className="flex flex-col">
                     <span className="text-sm font-medium text-black dark:text-white">
-                      {user.name}
+                      {userProfile.name}
                     </span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {user.role}
+                      {userProfile.role === USER_ROLES.SELLER ? 'Seller' : 'Buyer'}
                     </span>
                   </div>
                   <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -160,11 +157,10 @@ export const Navbar: React.FC = () => {
                     <div className="p-2">
                       <button
                         onClick={handleLogout}
-                        disabled={logoutMutation.isPending}
                         className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
-                        <span>{logoutMutation.isPending ? 'Logging out...' : 'Logout'}</span>
+                        <span>Disconnect</span>
                       </button>
                     </div>
                   </div>
@@ -210,20 +206,20 @@ export const Navbar: React.FC = () => {
           <div className="md:hidden py-4 border-t border-gray-200 dark:border-gray-800">
             <div className="flex flex-col gap-2">
               {/* User Info (Mobile) */}
-              {isAuthenticated && user && (
+              {isAuthenticated && userProfile && (
                 <div className="mb-3 p-3 rounded-lg bg-[#C6D870]/10 border border-[#C6D870]/30">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-[#C6D870] flex items-center justify-center">
                       <span className="text-black font-semibold text-lg">
-                        {user.name.charAt(0).toUpperCase()}
+                        {userProfile.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div className="flex-1">
                       <div className="font-semibold text-sm text-black dark:text-white">
-                        {user.name}
+                        {userProfile.name}
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {user.role} • Authenticated
+                        {userProfile.role === USER_ROLES.SELLER ? 'Seller' : 'Buyer'} • Authenticated
                       </div>
                     </div>
                   </div>
@@ -233,11 +229,10 @@ export const Navbar: React.FC = () => {
                       handleLogout();
                       setMobileMenuOpen(false);
                     }}
-                    disabled={logoutMutation.isPending}
                     className="w-full mt-3 flex items-center justify-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors border border-red-500/20"
                   >
                     <LogOut className="w-4 h-4" />
-                    <span>{logoutMutation.isPending ? 'Logging out...' : 'Logout'}</span>
+                    <span>Disconnect</span>
                   </button>
                 </div>
               )}

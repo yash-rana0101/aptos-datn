@@ -1,15 +1,15 @@
 /// Order Module for E-commerce Platform
 /// Handles order placement, management, and tracking for buyers
 /// Integrates with product and user_profile modules
-module message_board_addr::order {
+module ecommerce_platform::order {
     use std::signer;
     use std::string::String;
     use std::vector;
     use aptos_framework::event;
     use aptos_framework::object::{Self, Object, ExtendRef};
     use aptos_framework::timestamp;
-    use message_board_addr::user_profile;
-    use message_board_addr::product::{Self, Product};
+    use ecommerce_platform::user_profile;
+    use ecommerce_platform::product::{Self, Product};
 
     // ======================== Error Codes ========================
     
@@ -234,7 +234,7 @@ module message_board_addr::order {
         let order_id = get_next_order_id();
         
         // Create order object
-        let order_constructor_ref = &object::create_object(@message_board_addr);
+        let order_constructor_ref = &object::create_object(@ecommerce_platform);
         let order_signer = &object::generate_signer(order_constructor_ref);
         let order_obj_addr = object::address_from_constructor_ref(order_constructor_ref);
         let extend_ref = object::generate_extend_ref(order_constructor_ref);
@@ -276,7 +276,7 @@ module message_board_addr::order {
         buyer_registry.order_counter = buyer_registry.order_counter + 1;
         
         // Track order in global seller registry
-        let global_seller_registry = borrow_global_mut<SellerOrderRegistry>(@message_board_addr);
+        let global_seller_registry = borrow_global_mut<SellerOrderRegistry>(@ecommerce_platform);
         vector::push_back(&mut global_seller_registry.order_objects, order_obj_addr);
         vector::push_back(&mut global_seller_registry.seller_addresses, seller_wallet);
         
@@ -526,11 +526,11 @@ module message_board_addr::order {
     /// @param seller_addr - Seller's wallet address
     /// @return Vector of order object addresses
     public fun get_seller_orders(seller_addr: address): vector<address> acquires SellerOrderRegistry {
-        if (!exists<SellerOrderRegistry>(@message_board_addr)) {
+        if (!exists<SellerOrderRegistry>(@ecommerce_platform)) {
             return vector::empty<address>()
         };
         
-        let registry = borrow_global<SellerOrderRegistry>(@message_board_addr);
+        let registry = borrow_global<SellerOrderRegistry>(@ecommerce_platform);
         let seller_orders = vector::empty<address>();
         let i = 0;
         let len = vector::length(&registry.order_objects);
@@ -605,7 +605,7 @@ module message_board_addr::order {
     
     /// Get next order ID from global counter
     fun get_next_order_id(): u64 acquires GlobalOrderCounter {
-        let counter = borrow_global_mut<GlobalOrderCounter>(@message_board_addr);
+        let counter = borrow_global_mut<GlobalOrderCounter>(@ecommerce_platform);
         counter.counter = counter.counter + 1;
         counter.counter
     }

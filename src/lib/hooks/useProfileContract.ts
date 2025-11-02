@@ -9,6 +9,12 @@ import { toast } from 'sonner';
 import * as profileContract from '../contracts/profile';
 import type { RegisterProfileParams, UpdateProfileParams } from '../types/contracts';
 
+// Helper to pad addresses to 64 characters
+const padAddress = (address: string): string => {
+  const cleanAddress = address.startsWith('0x') ? address.slice(2) : address;
+  return `0x${cleanAddress.padStart(64, '0')}`;
+};
+
 // Query keys
 export const profileKeys = {
   all: ['profile'] as const,
@@ -25,11 +31,12 @@ export const profileKeys = {
 export const useUserProfile = (address?: string, enabled = true) => {
   const { account } = useWallet();
   const userAddress = address || account?.address?.toString();
+  const paddedAddress = userAddress ? padAddress(userAddress) : undefined;
 
   return useQuery({
-    queryKey: profileKeys.detail(userAddress || ''),
-    queryFn: () => profileContract.getUserProfile(userAddress!),
-    enabled: enabled && !!userAddress,
+    queryKey: profileKeys.detail(paddedAddress || ''),
+    queryFn: () => profileContract.getUserProfile(paddedAddress!),
+    enabled: enabled && !!paddedAddress,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
@@ -40,11 +47,12 @@ export const useUserProfile = (address?: string, enabled = true) => {
 export const useIsBuyer = (address?: string) => {
   const { account } = useWallet();
   const userAddress = address || account?.address?.toString();
+  const paddedAddress = userAddress ? padAddress(userAddress) : undefined;
 
   return useQuery({
-    queryKey: profileKeys.isBuyer(userAddress || ''),
-    queryFn: () => profileContract.isBuyer(userAddress!),
-    enabled: !!userAddress,
+    queryKey: profileKeys.isBuyer(paddedAddress || ''),
+    queryFn: () => profileContract.isBuyer(paddedAddress!),
+    enabled: !!paddedAddress,
     staleTime: 5 * 60 * 1000,
   });
 };
@@ -55,11 +63,12 @@ export const useIsBuyer = (address?: string) => {
 export const useIsSeller = (address?: string) => {
   const { account } = useWallet();
   const userAddress = address || account?.address?.toString();
+  const paddedAddress = userAddress ? padAddress(userAddress) : undefined;
 
   return useQuery({
-    queryKey: profileKeys.isSeller(userAddress || ''),
-    queryFn: () => profileContract.isSeller(userAddress!),
-    enabled: !!userAddress,
+    queryKey: profileKeys.isSeller(paddedAddress || ''),
+    queryFn: () => profileContract.isSeller(paddedAddress!),
+    enabled: !!paddedAddress,
     staleTime: 5 * 60 * 1000,
   });
 };
@@ -70,11 +79,12 @@ export const useIsSeller = (address?: string) => {
 export const useIsProfileActive = (address?: string) => {
   const { account } = useWallet();
   const userAddress = address || account?.address?.toString();
+  const paddedAddress = userAddress ? padAddress(userAddress) : undefined;
 
   return useQuery({
-    queryKey: profileKeys.isActive(userAddress || ''),
-    queryFn: () => profileContract.isProfileActive(userAddress!),
-    enabled: !!userAddress,
+    queryKey: profileKeys.isActive(paddedAddress || ''),
+    queryFn: () => profileContract.isProfileActive(paddedAddress!),
+    enabled: !!paddedAddress,
     staleTime: 5 * 60 * 1000,
   });
 };
@@ -85,11 +95,12 @@ export const useIsProfileActive = (address?: string) => {
 export const useUserDetails = (address?: string) => {
   const { account } = useWallet();
   const userAddress = address || account?.address?.toString();
+  const paddedAddress = userAddress ? padAddress(userAddress) : undefined;
 
   return useQuery({
-    queryKey: profileKeys.details(userAddress || ''),
-    queryFn: () => profileContract.getUserDetails(userAddress!),
-    enabled: !!userAddress,
+    queryKey: profileKeys.details(paddedAddress || ''),
+    queryFn: () => profileContract.getUserDetails(paddedAddress!),
+    enabled: !!paddedAddress,
     staleTime: 5 * 60 * 1000,
   });
 };
@@ -111,7 +122,8 @@ export const useRegisterProfile = () => {
     },
     onSuccess: () => {
       if (account?.address) {
-        queryClient.invalidateQueries({ queryKey: profileKeys.detail(account.address.toString()) });
+        const paddedAddress = padAddress(account.address.toString());
+        queryClient.invalidateQueries({ queryKey: profileKeys.detail(paddedAddress) });
         queryClient.invalidateQueries({ queryKey: profileKeys.all });
       }
       toast.success('Profile registered successfully!');
@@ -139,7 +151,8 @@ export const useUpdateProfile = () => {
       return response;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: profileKeys.detail(variables.profileAddress) });
+      const paddedAddress = padAddress(variables.profileAddress);
+      queryClient.invalidateQueries({ queryKey: profileKeys.detail(paddedAddress) });
       toast.success('Profile updated successfully!');
     },
     onError: (error: Error) => {
@@ -165,8 +178,9 @@ export const useDeactivateProfile = () => {
       return response;
     },
     onSuccess: (_, profileAddress) => {
-      queryClient.invalidateQueries({ queryKey: profileKeys.detail(profileAddress) });
-      queryClient.invalidateQueries({ queryKey: profileKeys.isActive(profileAddress) });
+      const paddedAddress = padAddress(profileAddress);
+      queryClient.invalidateQueries({ queryKey: profileKeys.detail(paddedAddress) });
+      queryClient.invalidateQueries({ queryKey: profileKeys.isActive(paddedAddress) });
       toast.success('Profile deactivated successfully');
     },
     onError: (error: Error) => {
@@ -192,8 +206,9 @@ export const useReactivateProfile = () => {
       return response;
     },
     onSuccess: (_, profileAddress) => {
-      queryClient.invalidateQueries({ queryKey: profileKeys.detail(profileAddress) });
-      queryClient.invalidateQueries({ queryKey: profileKeys.isActive(profileAddress) });
+      const paddedAddress = padAddress(profileAddress);
+      queryClient.invalidateQueries({ queryKey: profileKeys.detail(paddedAddress) });
+      queryClient.invalidateQueries({ queryKey: profileKeys.isActive(paddedAddress) });
       toast.success('Profile reactivated successfully');
     },
     onError: (error: Error) => {

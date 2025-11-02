@@ -6,8 +6,26 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { useProducts } from '@/lib/hooks/useProductQuery';
+import { useAllProducts } from '@/lib/hooks/useProductContract';
 import { Loader2 } from 'lucide-react';
+
+// Type definition for product data from blockchain/indexer
+type ProductListItem = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  images: string[];
+  category: string;
+  isAvailable: boolean;
+  quantity: number;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    name: string;
+    role: string;
+  };
+};
 import {
   Search,
   SlidersHorizontal,
@@ -75,27 +93,15 @@ export default function ProductsPage() {
   const [selectedCondition, setSelectedCondition] = useState('All');
   const [sortBy, setSortBy] = useState('recent');
 
-  // Fetch products from API
-  const { data: apiProducts, isLoading, error } = useProducts();
+  // Fetch products from blockchain
+  const { data: blockchainProducts, isLoading, error } = useAllProducts();
 
-  // Transform API products to match the UI format
-  const products = useMemo(() => {
-    if (!apiProducts) return [];
-
-    return apiProducts.map((product) => ({
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      images: product.images,
-      category: product.category,
-      isAvailable: product.isAvailable,
-      quantity: product.quantity,
-      createdAt: product.createdAt,
-      updatedAt: product.updatedAt,
-      user: product.user,
-    }));
-  }, [apiProducts]);
+  // Transform blockchain products to match the UI format
+  const products: ProductListItem[] = useMemo(() => {
+    if (!blockchainProducts) return [];
+    // When indexer is implemented, blockchain products will already be in the right format
+    return blockchainProducts;
+  }, [blockchainProducts]);
 
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
@@ -128,7 +134,7 @@ export default function ProductsPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md mx-auto px-4">
           <Package className="w-16 h-16 text-gray-600 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-white mb-2">Failed to load products</h3>
           <p className="text-gray-400 mb-6">Please try again later</p>
@@ -138,6 +144,52 @@ export default function ProductsPage() {
           >
             Retry
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // No products (indexer not implemented)
+  if (!isLoading && products.length === 0) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center max-w-2xl mx-auto px-4">
+          <Package className="w-20 h-20 text-[#C6D870] mx-auto mb-6" />
+          <h3 className="text-2xl font-bold text-white mb-3">Product Listing Coming Soon!</h3>
+          <p className="text-gray-400 mb-4">
+            The product marketplace is being migrated to use blockchain data directly.
+          </p>
+          <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 text-left mb-6">
+            <h4 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+              <Loader2 className="w-5 h-5 text-[#C6D870]" />
+              Migration in Progress
+            </h4>
+            <ul className="space-y-2 text-sm text-gray-400">
+              <li>✅ Wallet connection with Petra</li>
+              <li>✅ User registration on blockchain</li>
+              <li>✅ Smart contracts deployed (Profile, Product, Order, Escrow)</li>
+              <li>⏳ Product indexer integration (in progress)</li>
+              <li>⏳ Seller product listings (coming soon)</li>
+            </ul>
+          </div>
+          <p className="text-sm text-gray-500 mb-6">
+            In the meantime, sellers can create products via the seller dashboard,
+            and buyers will be able to browse them once the indexer is integrated.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <Link href="/seller">
+              <Button className="bg-[#C6D870] text-black hover:bg-[#B5C760]">
+                Go to Seller Dashboard
+              </Button>
+            </Link>
+            <Button
+              variant="outline"
+              className="border-gray-700 text-white hover:bg-white/5"
+              onClick={() => window.location.href = '/'}
+            >
+              Back to Home
+            </Button>
+          </div>
         </div>
       </div>
     );

@@ -1,14 +1,15 @@
+import ProtectedRoute from "@/components/ProtectedRoute/ProtectedRoute";
+import Footer from "@/components/common/Footer";
+import Navbar from "@/components/common/Navbar";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/lib/providers/AuthProvider";
+import { QueryProvider } from "@/lib/providers/QueryProvider";
+import { AptosWalletProvider } from "@/components/wallet/AptosWalletProvider";
+import { NetworkMismatchWarning } from "@/components/wallet/NetworkMismatchWarning";
 import type { Metadata } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
 import "./globals.css";
-import { Providers } from "./providers";
-import { Toaster } from "@/components/ui/sonner";
-import { ThemeProvider } from "@/components/theme-provider";
-import { QueryProvider } from "@/lib/providers/QueryProvider";
-import { AuthProvider } from "@/lib/providers/AuthProvider";
-import ProtectedRoute from "@/components/ProtectedRoute/ProtectedRoute";
-import Navbar from "@/components/common/Navbar";
-import Footer from "@/components/common/Footer";
 
 const geistSans = Inter({
   variable: "--font-geist-sans",
@@ -43,8 +44,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>
-          <QueryProvider>
+        <QueryProvider>
+          <AptosWalletProvider>
             <AuthProvider>
               <ThemeProvider
                 attribute="class"
@@ -52,6 +53,9 @@ export default function RootLayout({
                 enableSystem
                 disableTransitionOnChange
               >
+                {/* Network Mismatch Warning */}
+                <NetworkMismatchWarning />
+
                 <div className="flex flex-col min-h-screen">
                   {/* Navigation Bar */}
                   <Navbar />
@@ -67,8 +71,8 @@ export default function RootLayout({
                 <Toaster />
               </ThemeProvider>
             </AuthProvider>
-          </QueryProvider>
-        </Providers>
+          </AptosWalletProvider>
+        </QueryProvider>
       </body>
     </html>
   );

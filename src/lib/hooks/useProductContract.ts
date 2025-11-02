@@ -36,6 +36,41 @@ export const useProduct = (productAddress: string, enabled = true) => {
   });
 };
 
+// Type for product list items (matches UI requirements)
+type ProductListItem = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  images: string[];
+  category: string;
+  isAvailable: boolean;
+  quantity: number;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    name: string;
+    role: string;
+  };
+};
+
+/**
+ * Hook to get all products (from indexer or aggregated from sellers)
+ * Note: This is a placeholder - you should implement an indexer or aggregation service
+ */
+export const useAllProducts = () => {
+  return useQuery<ProductListItem[]>({
+    queryKey: productKeys.lists(),
+    queryFn: async (): Promise<ProductListItem[]> => {
+      // TODO: Implement indexer query or aggregate from known sellers
+      // For now, return empty array - implement indexer integration
+      console.warn('useAllProducts: Indexer not yet implemented. Return empty products array.');
+      return [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
 /**
  * Hook to get seller's products
  */

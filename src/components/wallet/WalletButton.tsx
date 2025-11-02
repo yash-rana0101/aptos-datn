@@ -9,7 +9,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { useWallet } from '@/lib/web3';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { useAuth } from '@/lib/providers/AuthProvider';
 import { Wallet, Copy, ExternalLink, LogOut, CheckCircle2, User, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
@@ -24,9 +24,12 @@ export const WalletButton: React.FC<WalletButtonProps> = ({
   onConnectClick,
   className,
 }) => {
-  const { address, balance, isConnected, disconnect } = useWallet();
-  const { isAuthenticated, user } = useAuth();
+  const { account, connected, disconnect } = useWallet();
+  const { isAuthenticated, userProfile } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
+
+  const address = account?.address?.toString();
+  const balance = ''; // We can fetch this from blockchain if needed
 
   // Format address to display first and last 4 characters
   const formatAddress = (addr: string) => {
@@ -61,7 +64,7 @@ export const WalletButton: React.FC<WalletButtonProps> = ({
   }
 
   // If not authenticated and wallet not connected, show Connect Wallet button
-  if (!isConnected) {
+  if (!connected) {
     return (
       <Button
         onClick={onConnectClick}
@@ -159,20 +162,20 @@ export const WalletButton: React.FC<WalletButtonProps> = ({
               </div>
 
               {/* User Info (if authenticated) */}
-              {isAuthenticated && user && (
+              {isAuthenticated && userProfile && (
                 <div className="mb-3 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-[#C6D870] flex items-center justify-center">
                       <span className="text-black font-bold text-lg">
-                        {user.name.charAt(0).toUpperCase()}
+                        {userProfile.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div className="flex-1">
                       <div className="font-semibold text-sm text-black dark:text-white">
-                        {user.name}
+                        {userProfile.name}
                       </div>
                       <div className="text-xs text-gray-600 dark:text-gray-400">
-                        {user.role} • {user.email}
+                        {userProfile.role} • {userProfile.email}
                       </div>
                     </div>
                   </div>

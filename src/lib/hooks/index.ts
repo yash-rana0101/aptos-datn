@@ -60,3 +60,10 @@ export {
   useConfirmDelivery,
   useCancelEscrow,
 } from './useEscrowContract';
+
+// Product Query hooks
+export {
+  useSellerProducts as useSellerProductsQuery,
+  useProductQuery,
+  useProducts,
+} from './useProductQuery';

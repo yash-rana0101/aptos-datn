@@ -2,17 +2,23 @@
 
 import React, { useMemo } from 'react';
 import Link from 'next/link';
-import { useAuth } from '@/lib/providers/AuthProvider';
-import { useProducts } from '@/lib/hooks/useProductQuery';
+import { useSellerProductsQuery } from '@/lib/hooks';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
 
 export default function SellerDashboardPage() {
-  const { user } = useAuth();
-  const { data: products = [] } = useProducts();
+  const { account } = useWallet();
+  const { data: myProducts = [], isLoading } = useSellerProductsQuery(account?.address?.toString());
 
-  const myProducts = products.filter(p => p.user?.wallet === user?.wallet || p.user?.id === user?.id);
+  const totalQuantity = useMemo(() => myProducts.reduce((s: number, p: any) => s + (p?.quantity || 0), 0), [myProducts]);
+  const totalValue = useMemo(() => myProducts.reduce((s: number, p: any) => s + ((p?.price || 0) * (p?.quantity || 0)), 0), [myProducts]);
 
-  const totalQuantity = useMemo(() => myProducts.reduce((s, p) => s + (p.quantity || 0), 0), [myProducts]);
-  const totalValue = useMemo(() => myProducts.reduce((s, p) => s + ((p.price || 0) * (p.quantity || 0)), 0), [myProducts]);
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-white">Loading products...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6">
@@ -24,9 +30,9 @@ export default function SellerDashboardPage() {
         <div className="p-4 rounded-lg border border-gray-700 bg-[#0b0b0b]/60">
           <h3 className="text-sm text-gray-300">Profile</h3>
           <div className="mt-2">
-            <div className="text-white font-semibold">{user?.name}</div>
-            <div className="text-xs text-gray-400">{user?.email}</div>
-            <div className="text-xs text-gray-400">Role: {user?.role}</div>
+            <div className="text-white font-semibold">Seller</div>
+            <div className="text-xs text-gray-400">{account?.address?.toString().slice(0, 10)}...</div>
+            <div className="text-xs text-gray-400">Role: Seller</div>
           </div>
         </div>
 
@@ -50,20 +56,21 @@ export default function SellerDashboardPage() {
       <div className="mt-6">
         <h2 className="text-lg text-white font-semibold mb-3">Recent Products</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {myProducts.slice(0, 6).map(p => (
-            <div key={p.id} className="p-3 rounded-md border border-gray-800 bg-[#0b0b0b]">
+          {myProducts.slice(0, 6).map((p: any) => (
+            <div key={p?.productAddress} className="p-3 rounded-md border border-gray-800 bg-[#0b0b0b]">
               <div className="h-36 w-full bg-gray-900 rounded-md overflow-hidden flex items-center justify-center">
-                {p.images && p.images.length > 0 ? (
+                {p?.imageUrls && p.imageUrls.length > 0 ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
+                  <img src={p.imageUrls[0]} alt={p.title} className="w-full h-full object-cover" />
                 ) : (
                   <div className="text-gray-600">No image</div>
                 )}
               </div>
               <div className="mt-3">
-                <div className="text-white font-semibold">{p.name}</div>
-                <div className="text-xs text-gray-400">{p.category}</div>
-                <div className="mt-2 text-sm text-gray-300">Qty: {p.quantity ?? '—'}</div>
+                <div className="text-white font-semibold">{p?.title}</div>
+                <div className="text-xs text-gray-400">{p?.category}</div>
+                <div className="mt-2 text-sm text-gray-300">Qty: {p?.quantity ?? '—'}</div>
+                <div className="mt-1 text-sm text-green-400">Price: ${(p?.price || 0) / 100000000} APT</div>
               </div>
             </div>
           ))}

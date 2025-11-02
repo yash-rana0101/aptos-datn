@@ -4,7 +4,7 @@
  */
 
 import { InputTransactionData } from "@aptos-labs/wallet-adapter-react";
-import { MODULES } from "@/constants";
+import { MODULES, DEFAULT_GAS_OPTIONS } from "@/constants";
 import { aptos } from "@/lib/aptos";
 import type {
   EscrowOrder,
@@ -29,6 +29,7 @@ export const initiateTradeAndLockFunds = (
       function: `${MODULES.ESCROW}::initiate_trade_and_lock_funds`,
       functionArguments: [productAddress, quantity, shippingAddress, transactionHash],
     },
+    options: DEFAULT_GAS_OPTIONS,
   };
 };
 
@@ -45,6 +46,7 @@ export const deliverOrder = (
       function: `${MODULES.ESCROW}::deliver_order`,
       functionArguments: [escrowOrderAddress, deliveryCode],
     },
+    options: DEFAULT_GAS_OPTIONS,
   };
 };
 
@@ -61,6 +63,7 @@ export const confirmDeliveryAndReleaseFunds = (
       function: `${MODULES.ESCROW}::confirm_delivery_and_release_funds`,
       functionArguments: [escrowOrderAddress, receivingCode],
     },
+    options: DEFAULT_GAS_OPTIONS,
   };
 };
 
@@ -77,6 +80,7 @@ export const cancelEscrowOrder = (
       function: `${MODULES.ESCROW}::cancel_escrow_order`,
       functionArguments: [escrowOrderAddress, reason],
     },
+    options: DEFAULT_GAS_OPTIONS,
   };
 };
 

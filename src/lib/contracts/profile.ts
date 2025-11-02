@@ -4,13 +4,28 @@
  */
 
 import { InputTransactionData } from "@aptos-labs/wallet-adapter-react";
-import { MODULES } from "@/constants";
+import { MODULES, DEFAULT_GAS_OPTIONS } from "@/constants";
 import { aptos } from "@/lib/aptos";
 import type { 
   UserProfile, 
   RegisterProfileParams, 
   UpdateProfileParams 
 } from "@/lib/types/contracts";
+
+// ============= Helper Functions =============
+
+/**
+ * Pad address to 64 characters (excluding 0x prefix)
+ * Aptos addresses must be exactly 64 hex characters
+ */
+const padAddress = (address: string): string => {
+  // Remove 0x prefix if present
+  const cleanAddress = address.startsWith('0x') ? address.slice(2) : address;
+  // Pad with leading zeros to 64 characters
+  const paddedAddress = cleanAddress.padStart(64, '0');
+  // Return with 0x prefix
+  return `0x${paddedAddress}`;
+};
 
 // ============= Entry Functions (Write Operations) =============
 
@@ -27,6 +42,7 @@ export const registerProfile = (
       function: `${MODULES.USER_PROFILE}::register_profile`,
       functionArguments: [name, country, role, email, address, bio],
     },
+    options: DEFAULT_GAS_OPTIONS,
   };
 };
 
@@ -42,7 +58,7 @@ export const updateProfile = (
     data: {
       function: `${MODULES.USER_PROFILE}::update_profile`,
       functionArguments: [
-        profileAddress,
+        padAddress(profileAddress),
         name || "",
         country || "",
         email || "",
@@ -50,6 +66,7 @@ export const updateProfile = (
         bio || "",
       ],
     },
+    options: DEFAULT_GAS_OPTIONS,
   };
 };
 
@@ -62,8 +79,9 @@ export const deactivateProfile = (
   return {
     data: {
       function: `${MODULES.USER_PROFILE}::deactivate_profile`,
-      functionArguments: [profileAddress],
+      functionArguments: [padAddress(profileAddress)],
     },
+    options: DEFAULT_GAS_OPTIONS,
   };
 };
 
@@ -76,8 +94,9 @@ export const reactivateProfile = (
   return {
     data: {
       function: `${MODULES.USER_PROFILE}::reactivate_profile`,
-      functionArguments: [profileAddress],
+      functionArguments: [padAddress(profileAddress)],
     },
+    options: DEFAULT_GAS_OPTIONS,
   };
 };
 
@@ -93,7 +112,7 @@ export const getUserProfile = async (
     const result = await aptos.view({
       payload: {
         function: `${MODULES.USER_PROFILE}::get_profile` as `${string}::${string}::${string}`,
-        functionArguments: [address],
+        functionArguments: [padAddress(address)],
       },
     });
     
@@ -141,7 +160,7 @@ export const isBuyer = async (address: string): Promise<boolean> => {
     const result = await aptos.view({
       payload: {
         function: `${MODULES.USER_PROFILE}::is_buyer` as `${string}::${string}::${string}`,
-        functionArguments: [address],
+        functionArguments: [padAddress(address)],
       },
     });
     return result[0] as boolean;
@@ -159,7 +178,7 @@ export const isSeller = async (address: string): Promise<boolean> => {
     const result = await aptos.view({
       payload: {
         function: `${MODULES.USER_PROFILE}::is_seller` as `${string}::${string}::${string}`,
-        functionArguments: [address],
+        functionArguments: [padAddress(address)],
       },
     });
     return result[0] as boolean;
@@ -177,7 +196,7 @@ export const isProfileActive = async (address: string): Promise<boolean> => {
     const result = await aptos.view({
       payload: {
         function: `${MODULES.USER_PROFILE}::is_profile_active` as `${string}::${string}::${string}`,
-        functionArguments: [address],
+        functionArguments: [padAddress(address)],
       },
     });
     return result[0] as boolean;
@@ -197,7 +216,7 @@ export const getUserDetails = async (
     const result = await aptos.view({
       payload: {
         function: `${MODULES.USER_PROFILE}::get_user_details` as `${string}::${string}::${string}`,
-        functionArguments: [address],
+        functionArguments: [padAddress(address)],
       },
     });
     

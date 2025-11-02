@@ -1,14 +1,14 @@
 /// Product Module for E-commerce Platform
 /// Handles product creation, listing, updating, deletion, and inventory management
 /// Only sellers can create and manage products
-module message_board_addr::product {
+module ecommerce_platform::product {
     use std::signer;
     use std::string::String;
     use std::vector;
     use aptos_framework::event;
     use aptos_framework::object::{Self, Object, ExtendRef};
     use aptos_framework::timestamp;
-    use message_board_addr::user_profile;
+    use ecommerce_platform::user_profile;
 
     // ======================== Error Codes ========================
     
@@ -164,7 +164,7 @@ module message_board_addr::product {
         assert!(total_quantity > 0, ERR_INVALID_QUANTITY);
         
         // Create product object
-        let product_constructor_ref = &object::create_object(@message_board_addr);
+        let product_constructor_ref = &object::create_object(@ecommerce_platform);
         let product_signer = &object::generate_signer(product_constructor_ref);
         let product_obj_addr = object::address_from_constructor_ref(product_constructor_ref);
         let extend_ref = object::generate_extend_ref(product_constructor_ref);

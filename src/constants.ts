@@ -49,3 +49,9 @@ export const toOctas = (apt: number): number => Math.floor(apt * APT_UNIT);
 
 // Helper to convert Octas to APT
 export const toAPT = (octas: number): number => octas / APT_UNIT;
+
+// Transaction Gas Configuration
+export const DEFAULT_GAS_OPTIONS = {
+  maxGasAmount: 10000,  // Sufficient for most transactions
+  gasUnitPrice: 100,    // Standard gas price
+} as const;

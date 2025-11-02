@@ -1,6 +1,6 @@
 /// User Profile Module for E-commerce Platform
 /// Handles user registration and profile management for both buyers and sellers
-module message_board_addr::user_profile {
+module ecommerce_platform::user_profile {
     use std::signer;
     use std::string::String;
     use aptos_framework::event;

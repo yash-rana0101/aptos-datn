@@ -1,7 +1,7 @@
 /// Escrow Module for E-commerce Platform
 /// Handles secure fund holding and release for product trades
 /// Flow: Lock funds -> Verify delivery -> Release to seller
-module message_board_addr::escrow {
+module ecommerce_platform::escrow {
     use std::signer;
     use std::string::{Self, String};
     use std::vector;
@@ -10,8 +10,8 @@ module message_board_addr::escrow {
     use aptos_framework::timestamp;
     use aptos_framework::coin::{Self, Coin};
     use aptos_framework::aptos_coin::AptosCoin;
-    use message_board_addr::user_profile;
-    use message_board_addr::product::{Self, Product};
+    use ecommerce_platform::user_profile;
+    use ecommerce_platform::product::{Self, Product};
 
     // ======================== Error Codes ========================
     
@@ -270,7 +270,7 @@ module message_board_addr::escrow {
         let locked_funds = coin::withdraw<AptosCoin>(buyer, total_amount);
         
         // Generate unique escrow order ID
-        let counter = borrow_global_mut<GlobalEscrowCounter>(@message_board_addr);
+        let counter = borrow_global_mut<GlobalEscrowCounter>(@ecommerce_platform);
         counter.counter = counter.counter + 1;
         let escrow_order_id = counter.counter;
         
@@ -550,7 +550,7 @@ module message_board_addr::escrow {
     #[view]
     /// Get all escrow orders for a seller
     public fun get_seller_escrow_orders(seller_addr: address): vector<address> acquires SellerEscrowRegistry {
-        let registry = borrow_global<SellerEscrowRegistry>(@message_board_addr);
+        let registry = borrow_global<SellerEscrowRegistry>(@ecommerce_platform);
         
         let (found, index) = vector::index_of(&registry.seller_addresses, &seller_addr);
         if (!found) {
@@ -668,7 +668,7 @@ module message_board_addr::escrow {
     
     /// Add escrow order to seller registry
     fun add_to_seller_registry(seller_addr: address, escrow_order_addr: address) acquires SellerEscrowRegistry {
-        let registry = borrow_global_mut<SellerEscrowRegistry>(@message_board_addr);
+        let registry = borrow_global_mut<SellerEscrowRegistry>(@ecommerce_platform);
         
         let (found, index) = vector::index_of(&registry.seller_addresses, &seller_addr);
         

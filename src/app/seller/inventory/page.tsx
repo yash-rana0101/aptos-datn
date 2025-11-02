@@ -1,26 +1,27 @@
 "use client";
 
 import React, { useMemo } from 'react';
-import { useProducts } from '@/lib/hooks/useProductQuery';
-import { useAuth } from '@/lib/providers/AuthProvider';
+import { useSellerProductsQuery } from '@/lib/hooks';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
 
 export default function SellerInventoryPage() {
-  const { data: products = [], isLoading } = useProducts();
-  const { user } = useAuth();
+  const { account } = useWallet();
+  const { data: myProducts = [], isLoading } = useSellerProductsQuery(account?.address?.toString());
 
-  const myProducts = products.filter(p => p.user?.wallet === user?.wallet || p.user?.id === user?.id);
+  // Filter out null products
+  const validProducts = myProducts.filter(p => p !== null);
 
   // Calculate inventory statistics
   const inventoryStats = useMemo(() => {
-    const totalProducts = myProducts.length;
-    const totalQuantity = myProducts.reduce((sum, p) => sum + (p.quantity || 0), 0);
-    const totalValue = myProducts.reduce((sum, p) => sum + (p.price * (p.quantity || 0)), 0);
-    const lowStockItems = myProducts.filter(p => (p.quantity || 0) < 10).length;
-    const outOfStockItems = myProducts.filter(p => (p.quantity || 0) === 0).length;
-    const availableItems = myProducts.filter(p => p.isAvailable).length;
+    const totalProducts = validProducts.length;
+    const totalQuantity = validProducts.reduce((sum, p) => sum + (p?.quantity || 0), 0);
+    const totalValue = validProducts.reduce((sum, p) => sum + ((p?.price || 0) * (p?.quantity || 0)), 0);
+    const lowStockItems = validProducts.filter(p => (p?.quantity || 0) < 10 && (p?.quantity || 0) > 0).length;
+    const outOfStockItems = validProducts.filter(p => (p?.quantity || 0) === 0).length;
+    const availableItems = validProducts.filter(p => p?.isAvailable).length;
 
     return { totalProducts, totalQuantity, totalValue, lowStockItems, outOfStockItems, availableItems };
-  }, [myProducts]);
+  }, [validProducts]);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -65,7 +66,7 @@ export default function SellerInventoryPage() {
         <div className="overflow-x-auto">
           {isLoading ? (
             <div className="p-8 text-center text-gray-400">Loading inventory...</div>
-          ) : myProducts.length === 0 ? (
+          ) : validProducts.length === 0 ? (
             <div className="p-8 text-center text-gray-400">No inventory items found.</div>
           ) : (
             <table className="w-full">
@@ -82,27 +83,28 @@ export default function SellerInventoryPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
-                {myProducts.map((product) => {
-                  const stockValue = product.price * (product.quantity || 0);
+                {validProducts.map((product) => {
+                  if (!product) return null;
+                  const stockValue = (product.price || 0) * (product.quantity || 0);
                   const isLowStock = (product.quantity || 0) < 10 && (product.quantity || 0) > 0;
                   const isOutOfStock = (product.quantity || 0) === 0;
 
                   return (
-                    <tr key={product.id} className="hover:bg-white/5 transition-colors">
+                    <tr key={product.productAddress} className="hover:bg-white/5 transition-colors">
                       {/* Product Info */}
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-900 shrink-0">
-                            {product.images && product.images.length > 0 ? (
+                            {product.imageUrls && product.imageUrls.length > 0 ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                              <img src={product.imageUrls[0]} alt={product.title} className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs">No img</div>
                             )}
                           </div>
                           <div>
-                            <div className="text-white font-medium text-sm">{product.name}</div>
-                            <div className="text-xs text-gray-500 mt-0.5">ID: {product.id.slice(0, 8)}...</div>
+                            <div className="text-white font-medium text-sm">{product.title}</div>
+                            <div className="text-xs text-gray-500 mt-0.5">ID: {product.productAddress?.slice(0, 8)}...</div>
                           </div>
                         </div>
                       </td>
@@ -116,14 +118,14 @@ export default function SellerInventoryPage() {
 
                       {/* Price */}
                       <td className="px-4 py-4 text-right">
-                        <span className="text-white font-semibold">${product.price.toFixed(2)}</span>
+                        <span className="text-white font-semibold">${((product.price || 0) / 100000000).toFixed(2)} APT</span>
                       </td>
 
                       {/* Quantity */}
                       <td className="px-4 py-4 text-center">
                         <span className={`inline-flex items-center justify-center w-16 px-3 py-1 rounded-lg text-sm font-bold ${isOutOfStock ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                            isLowStock ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-                              'bg-green-500/20 text-green-400 border border-green-500/30'
+                          isLowStock ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                            'bg-green-500/20 text-green-400 border border-green-500/30'
                           }`}>
                           {product.quantity || 0}
                         </span>
@@ -137,8 +139,8 @@ export default function SellerInventoryPage() {
                       {/* Availability Status */}
                       <td className="px-4 py-4 text-center">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${product.isAvailable
-                            ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                            : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                          ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                          : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
                           }`}>
                           {product.isAvailable ? '● Active' : '○ Inactive'}
                         </span>
@@ -151,16 +153,16 @@ export default function SellerInventoryPage() {
                             <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
                               <div
                                 className={`h-full transition-all ${isOutOfStock ? 'bg-red-500' :
-                                    isLowStock ? 'bg-yellow-500' :
-                                      'bg-green-500'
+                                  isLowStock ? 'bg-yellow-500' :
+                                    'bg-green-500'
                                   }`}
                                 style={{ width: `${Math.min(((product.quantity || 0) / 50) * 100, 100)}%` }}
                               />
                             </div>
                           </div>
                           <span className={`text-xs font-medium ${isOutOfStock ? 'text-red-400' :
-                              isLowStock ? 'text-yellow-400' :
-                                'text-green-400'
+                            isLowStock ? 'text-yellow-400' :
+                              'text-green-400'
                             }`}>
                             {isOutOfStock ? 'Out of Stock' : isLowStock ? 'Low Stock' : 'In Stock'}
                           </span>
@@ -170,14 +172,14 @@ export default function SellerInventoryPage() {
                       {/* Last Updated */}
                       <td className="px-4 py-4">
                         <div className="text-sm text-gray-400">
-                          {new Date(product.updatedAt).toLocaleDateString('en-US', {
+                          {new Date((product.updatedAt || 0) * 1000).toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',
                             year: 'numeric'
                           })}
                         </div>
                         <div className="text-xs text-gray-600 mt-0.5">
-                          {new Date(product.updatedAt).toLocaleTimeString('en-US', {
+                          {new Date((product.updatedAt || 0) * 1000).toLocaleTimeString('en-US', {
                             hour: '2-digit',
                             minute: '2-digit'
                           })}

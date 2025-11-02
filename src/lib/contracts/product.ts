@@ -4,7 +4,7 @@
  */
 
 import { InputTransactionData } from "@aptos-labs/wallet-adapter-react";
-import { MODULES } from "@/constants";
+import { MODULES, DEFAULT_GAS_OPTIONS } from "@/constants";
 import { aptos } from "@/lib/aptos";
 import type {
   Product,
@@ -28,6 +28,7 @@ export const createProduct = (
       function: `${MODULES.PRODUCT}::create_product`,
       functionArguments: [title, description, price, quantity, imageUrls, category],
     },
+    options: DEFAULT_GAS_OPTIONS,
   };
 };
 
@@ -51,6 +52,7 @@ export const updateProduct = (
         category || "",
       ],
     },
+    options: DEFAULT_GAS_OPTIONS,
   };
 };
 
@@ -67,6 +69,7 @@ export const updateInventory = (
       function: `${MODULES.PRODUCT}::update_inventory`,
       functionArguments: [productAddress, additionalQuantity],
     },
+    options: DEFAULT_GAS_OPTIONS,
   };
 };
 
@@ -82,6 +85,7 @@ export const setProductAvailability = (
       function: `${MODULES.PRODUCT}::set_product_availability`,
       functionArguments: [productAddress, isAvailable],
     },
+    options: DEFAULT_GAS_OPTIONS,
   };
 };
 
@@ -96,6 +100,7 @@ export const deleteProduct = (
       function: `${MODULES.PRODUCT}::delete_product`,
       functionArguments: [productAddress],
     },
+    options: DEFAULT_GAS_OPTIONS,
   };
 };
 

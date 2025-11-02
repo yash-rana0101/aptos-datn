@@ -4,7 +4,7 @@
  */
 
 import { InputTransactionData } from "@aptos-labs/wallet-adapter-react";
-import { MODULES } from "@/constants";
+import { MODULES, DEFAULT_GAS_OPTIONS } from "@/constants";
 import { aptos } from "@/lib/aptos";
 import type {
   Order,
@@ -28,6 +28,7 @@ export const placeOrder = (
       function: `${MODULES.ORDER}::place_order`,
       functionArguments: [productAddress, quantity, shippingAddress, notes],
     },
+    options: DEFAULT_GAS_OPTIONS,
   };
 };
 
@@ -44,6 +45,7 @@ export const updateOrderStatus = (
       function: `${MODULES.ORDER}::update_order_status`,
       functionArguments: [orderAddress, newStatus],
     },
+    options: DEFAULT_GAS_OPTIONS,
   };
 };
 
@@ -60,6 +62,7 @@ export const cancelOrder = (
       function: `${MODULES.ORDER}::cancel_order`,
       functionArguments: [orderAddress, reason],
     },
+    options: DEFAULT_GAS_OPTIONS,
   };
 };
 
@@ -75,6 +78,7 @@ export const updateShippingAddress = (
       function: `${MODULES.ORDER}::update_shipping_address`,
       functionArguments: [orderAddress, newAddress],
     },
+    options: DEFAULT_GAS_OPTIONS,
   };
 };
 
@@ -89,6 +93,7 @@ export const markOrderPaid = (
       function: `${MODULES.ORDER}::mark_order_paid`,
       functionArguments: [orderAddress],
     },
+    options: DEFAULT_GAS_OPTIONS,
   };
 };
 

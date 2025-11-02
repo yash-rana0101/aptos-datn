@@ -4,6 +4,14 @@
   "version": "0.0.0",
   "license": "Apache-2.0",
   "scripts": {
+    "move:start-node": "node ./scripts/move/start-local-node",
+    "move:stop-node": "node ./scripts/move/stop-node",
+    "move:stop-node:admin": "powershell -ExecutionPolicy Bypass -Command \"Start-Process cmd -ArgumentList '/c cd /d %cd% && scripts\\move\\stop-node-admin.bat' -Verb RunAs\"",
+    "move:init-accounts": "node ./scripts/move/init-local-accounts",
+    "move:fund-wallet": "node ./scripts/move/fund-wallet.js",
+    "move:deploy-local": "node ./scripts/move/deploy-local",
+    "move:status": "node ./scripts/move/check-status",
+    "move:verify": "node ./scripts/verify-contracts",
     "move:test": "node ./scripts/move/test",
     "move:compile": "node ./scripts/move/compile",
     "move:publish": "node ./scripts/move/publish",
@@ -57,6 +65,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@tanstack/react-query-devtools": "^5.90.2",
     "@types/node": "^20.14.1",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
