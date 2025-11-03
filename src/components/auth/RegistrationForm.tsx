@@ -279,6 +279,15 @@ export function RegistrationForm({
             <p className="text-sm text-red-400 text-center">
               {registerMutation.error.message || 'Registration failed. Please try again.'}
             </p>
+            {registerMutation.error.message?.includes('network configuration') && (
+              <div className="mt-3 text-xs text-gray-400 space-y-1">
+                <p className="font-semibold">Troubleshooting steps:</p>
+                <p>1. Open Petra Wallet extension</p>
+                <p>2. Click Settings → Network</p>
+                <p>3. Switch to Devnet or Testnet</p>
+                <p>4. Try registering again</p>
+              </div>
+            )}
           </div>
         )}
 

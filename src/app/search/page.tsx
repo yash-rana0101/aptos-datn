@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import ProductCard from '@/components/product/ProductCard';
+import { useAllProducts } from '@/lib/hooks/useProductContract';
+import { Loader2 } from 'lucide-react';
 import {
   Search,
   SlidersHorizontal,
@@ -28,22 +30,88 @@ export default function SearchPage() {
     sortBy: 'relevance'
   });
 
+  // Fetch all products from blockchain
+  const { data: allProducts, isLoading, error } = useAllProducts();
+
   const categories = [
     'All', 'Electronics', 'Fashion', 'Home', 'Sports', 'Books', 'Toys', 'Automotive'
   ];
 
-  const mockProducts = Array.from({ length: 12 }, (_, i) => ({
-    id: `product-${i + 1}`,
-    title: `Product ${i + 1}`,
-    description: 'High-quality product with excellent features and condition',
-    price: `${(i + 1) * 50}`,
-    image: '/product-placeholder.jpg',
-    category: categories[i % categories.length].toLowerCase(),
-    seller: `0x${(i + 1).toString(16).padStart(8, '0')}`,
-    status: 'active' as const,
-    views: (i + 1) * 100,
-    favorites: (i + 1) * 10
-  }));
+  // Filter and sort products
+  const filteredProducts = useMemo(() => {
+    if (!allProducts) return [];
+
+    let filtered = [...allProducts];
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (p) =>
+          p.name.toLowerCase().includes(query) ||
+          p.description.toLowerCase().includes(query) ||
+          p.category.toLowerCase().includes(query)
+      );
+    }
+
+    // Category filter
+    if (filters.category !== 'all') {
+      filtered = filtered.filter(
+        (p) => p.category.toLowerCase() === filters.category.toLowerCase()
+      );
+    }
+
+    // Price range filter (convert APT to octas: 1 APT = 100,000,000 octas)
+    if (filters.priceRange !== 'all') {
+      const ranges = filters.priceRange.split('-');
+      let min = 0;
+      let max = Infinity;
+
+      if (ranges[0]) {
+        min = parseInt(ranges[0]) * 100_000_000; // Convert APT to octas
+      }
+      if (ranges[1]) {
+        if (ranges[1] === '1000+') {
+          max = Infinity;
+        } else {
+          max = parseInt(ranges[1]) * 100_000_000; // Convert APT to octas
+        }
+      }
+
+      filtered = filtered.filter((p) => {
+        return p.price >= min && (max === Infinity || p.price <= max);
+      });
+    }
+
+    // Only show available products
+    filtered = filtered.filter((p) => p.isAvailable);
+
+    // Sort products
+    switch (filters.sortBy) {
+      case 'price-low':
+        filtered.sort((a, b) => a.price - b.price);
+        break;
+      case 'price-high':
+        filtered.sort((a, b) => b.price - a.price);
+        break;
+      case 'newest':
+        filtered.sort((a, b) => {
+          const dateA = new Date(a.createdAt).getTime();
+          const dateB = new Date(b.createdAt).getTime();
+          return dateB - dateA;
+        });
+        break;
+      case 'popular':
+        // Sort by quantity (lower quantity = more sold, assuming starting quantity was same)
+        filtered.sort((a, b) => a.quantity - b.quantity);
+        break;
+      default:
+        // Relevance - keep original order
+        break;
+    }
+
+    return filtered;
+  }, [allProducts, searchQuery, filters]);
 
   return (
     <div className="min-h-screen bg-black py-8 px-4 sm:px-6 lg:px-8">
@@ -176,7 +244,7 @@ export default function SearchPage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-4">
             <p className="text-white">
-              <span className="font-semibold">{mockProducts.length}</span>
+              <span className="font-semibold">{filteredProducts.length}</span>
               <span className="text-gray-400 ml-1">results found</span>
             </p>
 
@@ -233,24 +301,82 @@ export default function SearchPage() {
         </div>
 
         {/* Products Grid */}
-        <div className={`grid gap-6 ${viewMode === 'grid'
-            ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-            : 'grid-cols-1'
-          }`}>
-          {mockProducts.map((product) => (
-            <ProductCard key={product.id} {...product} variant={viewMode === 'list' ? 'compact' : 'default'} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="w-12 h-12 text-[#C6D870] animate-spin mb-4" />
+            <p className="text-gray-400">Loading products from blockchain...</p>
+          </div>
+        ) : error ? (
+          <Card className="glass-neo p-12 border-gray-800 text-center">
+            <p className="text-red-400 mb-2">Error loading products</p>
+            <p className="text-gray-500 text-sm">{error.message}</p>
+          </Card>
+        ) : allProducts?.length === 0 ? (
+          <Card className="glass-neo p-12 border-gray-800 text-center">
+            <p className="text-gray-400 mb-4">No products available yet</p>
+            <p className="text-gray-500 text-sm mb-2">
+              Products will appear here once sellers list them on the marketplace.
+            </p>
+            <p className="text-yellow-500/70 text-xs mt-4">
+              ⚠️ Note: Product indexing is not yet implemented. Products will be visible after indexer setup.
+            </p>
+          </Card>
+        ) : filteredProducts.length === 0 ? (
+          <Card className="glass-neo p-12 border-gray-800 text-center">
+            <p className="text-gray-400 mb-2">No products match your search</p>
+            <p className="text-gray-500 text-sm">
+              Try adjusting your search query or filters
+            </p>
+            <Button
+              onClick={() => {
+                setSearchQuery('');
+                setFilters({
+                  category: 'all',
+                  priceRange: 'all',
+                  condition: 'all',
+                  sortBy: 'relevance'
+                });
+              }}
+              variant="outline"
+              className="mt-4 border-gray-700 text-white hover:bg-white/5"
+            >
+              Clear All Filters
+            </Button>
+          </Card>
+        ) : (
+          <div className={`grid gap-6 ${viewMode === 'grid'
+              ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+              : 'grid-cols-1'
+            }`}>
+            {filteredProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                id={product.id}
+                title={product.name}
+                description={product.description}
+                price={(product.price / 100_000_000).toFixed(4)} // Convert octas to APT
+                image={product.images[0] || '/product-placeholder.jpg'}
+                category={product.category}
+                seller={product.user.name || 'Seller'}
+                status={product.quantity === 0 ? 'sold' : 'active'}
+                variant={viewMode === 'list' ? 'compact' : 'default'}
+              />
+            ))}
+          </div>
+        )}
 
-        {/* Load More */}
-        <div className="mt-12 text-center">
-          <Button
-            size="lg"
-            className="bg-[#C6D870] text-black hover:bg-[#B5C760] px-12"
-          >
-            Load More Products
-          </Button>
-        </div>
+        {/* Load More - Hidden until pagination is implemented */}
+        {filteredProducts.length > 20 && (
+          <div className="mt-12 text-center">
+            <Button
+              size="lg"
+              className="bg-[#C6D870] text-black hover:bg-[#B5C760] px-12"
+              disabled
+            >
+              Load More Products (Coming Soon)
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -52,6 +52,6 @@ export const toAPT = (octas: number): number => octas / APT_UNIT;
 
 // Transaction Gas Configuration
 export const DEFAULT_GAS_OPTIONS = {
-  maxGasAmount: 10000,  // Sufficient for most transactions
-  gasUnitPrice: 100,    // Standard gas price
+  maxGasAmount: 200000,  // Increased for complex transactions (product creation, orders, etc.)
+  gasUnitPrice: 100,     // Standard gas price
 } as const;

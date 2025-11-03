@@ -135,12 +135,12 @@ export const Navbar: React.FC = () => {
                 >
                   <div className="w-8 h-8 rounded-full bg-[#C6D870] flex items-center justify-center">
                     <span className="text-black font-semibold text-sm">
-                      {userProfile.name.charAt(0).toUpperCase()}
+                      {userProfile?.name ? String(userProfile.name).charAt(0).toUpperCase() : 'U'}
                     </span>
                   </div>
                   <div className="flex flex-col">
                     <span className="text-sm font-medium text-black dark:text-white">
-                      {userProfile.name}
+                      {userProfile?.name || 'User'}
                     </span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       {userProfile.role === USER_ROLES.SELLER ? 'Seller' : 'Buyer'}
@@ -211,12 +211,12 @@ export const Navbar: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-[#C6D870] flex items-center justify-center">
                       <span className="text-black font-semibold text-lg">
-                        {userProfile.name.charAt(0).toUpperCase()}
+                        {userProfile?.name ? String(userProfile.name).charAt(0).toUpperCase() : 'U'}
                       </span>
                     </div>
                     <div className="flex-1">
                       <div className="font-semibold text-sm text-black dark:text-white">
-                        {userProfile.name}
+                        {userProfile?.name || 'User'}
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">
                         {userProfile.role === USER_ROLES.SELLER ? 'Seller' : 'Buyer'} • Authenticated

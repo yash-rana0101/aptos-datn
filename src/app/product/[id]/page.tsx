@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useProduct, useProducts } from '@/lib/hooks/useProductQuery';
+import { useProduct } from '@/lib/hooks';
 import {
   Loader2,
   Package,
@@ -28,18 +28,36 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [selectedImage, setSelectedImage] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // Fetch product details
-  const { data: product, isLoading, error } = useProduct(id);
-  // Fetch related products
-  const { data: allProducts } = useProducts();
+  // Fetch product details from blockchain
+  const { data: productData, isLoading, error } = useProduct(id);
 
-  // Filter related products by category (excluding current product)
-  const relatedProducts = React.useMemo(() => {
-    if (!product || !allProducts) return [];
-    return allProducts
-      .filter(p => p.category === product.category && p.id !== product.id)
-      .slice(0, 4);
-  }, [product, allProducts]);
+  // Map blockchain product data to UI format
+  const product = React.useMemo(() => {
+    if (!productData) return null;
+    return {
+      id: productData.productAddress,
+      name: productData.title,
+      description: productData.description,
+      price: productData.price / 100000000, // Convert octas to APT (number)
+      images: productData.imageUrls,
+      category: productData.category,
+      quantity: productData.quantity,
+      soldQuantity: productData.soldQuantity,
+      isAvailable: productData.isAvailable,
+      seller: productData.seller,
+      createdAt: new Date(productData.createdAt).toISOString(),
+      updatedAt: new Date(productData.updatedAt).toISOString(),
+      user: {
+        name: 'Seller', // Would need to fetch from profile contract
+        wallet: productData.seller,
+        role: 'Seller'
+      }
+    };
+  }, [productData]);
+
+  // Related products - requires indexer to implement properly
+  // For now, return empty array
+  const relatedProducts: any[] = [];
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);

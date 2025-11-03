@@ -32,6 +32,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Fetch user profile from blockchain
   const { data: userProfile, isLoading } = useUserProfile(walletAddress);
 
+  // Debug log to verify data transformation
+  if (userProfile && process.env.NODE_ENV === 'development') {
+    console.log('[AuthProvider] ✅ User profile loaded:', {
+      name: userProfile.name,
+      role: userProfile.role === 1 ? 'Buyer' : userProfile.role === 2 ? 'Seller' : 'Unknown',
+      isActive: userProfile.isActive,
+    });
+  }
+
   // Determine role information
   const isBuyer = userProfile?.role === USER_ROLES.BUYER;
   const isSeller = userProfile?.role === USER_ROLES.SELLER;

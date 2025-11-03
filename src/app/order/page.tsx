@@ -6,9 +6,10 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { useOrders } from '@/lib/hooks/useOrderQuery';
+import { useBuyerOrders, useProduct } from '@/lib/hooks';
 import { useAuth } from '@/lib/providers/AuthProvider';
 import { useRouter } from 'next/navigation';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { toast } from 'sonner';
 import {
   Package,
@@ -26,11 +27,17 @@ import {
 export default function OrdersPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { account } = useWallet();
   const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch orders from API
-  const { data: apiOrders, isLoading, error } = useOrders();
+  // Fetch order addresses from blockchain
+  const { data: orderAddresses, isLoading: ordersLoading, error: ordersError } = useBuyerOrders(account?.address?.toString());
+  
+  // For now, we'll show order addresses - in production, you'd fetch full order details
+  // This would require multiple queries or an indexer
+  const isLoading = ordersLoading;
+  const error = ordersError;
 
   // Redirect if not authenticated
   React.useEffect(() => {
@@ -40,26 +47,33 @@ export default function OrdersPage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
-  // Transform API orders to UI format
+  // Transform blockchain order addresses to UI format
+  // Note: In production, you'd fetch full order details for each address
+  // For now, we show placeholder data based on addresses
   const orders = useMemo(() => {
-    if (!apiOrders) return [];
+    if (!orderAddresses || orderAddresses.length === 0) return [];
 
-    return apiOrders.map(order => ({
-      id: order.id,
-      date: order.createdAt,
-      items: 1, // API doesn't return quantity
-      total: order.product.price.toString(),
-      status: order.status.toLowerCase(),
+    // TODO: Fetch full order details for each address using useOrder hook
+    // This would require either:
+    // 1. Multiple parallel queries (can be slow)
+    // 2. An indexer that aggregates order data
+    // For now, return placeholder data
+    return orderAddresses.map((address, index) => ({
+      id: address,
+      date: new Date().toISOString(), // Would come from order data
+      items: 1,
+      total: '0', // Would come from order data
+      status: 'processing', // Would come from order data
       products: [
         {
-          title: order.product.name,
-          image: order.product.images?.[0] || ''
+          title: 'Product', // Would come from product data
+          image: ''
         }
       ],
-      rawStatus: order.status,
-      category: order.product.category
+      rawStatus: 'PROCESSING',
+      category: 'General'
     }));
-  }, [apiOrders]);
+  }, [orderAddresses]);
 
   const filterOptions = [
     { value: 'all', label: 'All Orders', count: orders.length },

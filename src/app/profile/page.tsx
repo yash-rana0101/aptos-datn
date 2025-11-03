@@ -7,20 +7,56 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { User as UserIcon, Mail, Wallet, ShoppingBag, Package, DollarSign, Edit3, Save, X, Activity, MapPin, Clock, Loader2, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/lib/providers/AuthProvider';
-import { useUserStats, useUserProducts, useUserOrders, useUpdateUser } from '@/lib/hooks/useUserQuery';
+import { useUserProfile, useUpdateProfile, useBuyerOrders, useSellerProducts, useOrder, useProduct } from '@/lib/hooks';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { data: userStats, isLoading: statsLoading } = useUserStats();
-  const { data: products, isLoading: productsLoading } = useUserProducts();
-  const { data: orders, isLoading: ordersLoading } = useUserOrders();
-  const updateUserMutation = useUpdateUser();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { account } = useWallet();
+  
+  // Fetch user profile from blockchain
+  const { data: profileData, isLoading: profileLoading } = useUserProfile(account?.address?.toString());
+  
+  // Fetch orders and products based on role
+  const { data: orderAddresses = [], isLoading: ordersLoading } = useBuyerOrders(account?.address?.toString());
+  const { data: productAddresses = [], isLoading: productsLoading } = useSellerProducts(account?.address?.toString());
+  
+  const updateProfileMutation = useUpdateProfile();
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({ name: user?.name || '', country: user?.country || '' });
+  const [formData, setFormData] = useState({ name: '', country: '' });
+
+  // Map blockchain profile data to UI format
+  const user = React.useMemo(() => {
+    if (!profileData || !account) return null;
+    
+    const roleMap: Record<number, string> = {
+      1: 'BUYER',
+      2: 'SELLER',
+    };
+
+    return {
+      name: profileData.name,
+      email: profileData.email,
+      country: profileData.country,
+      wallet: account.address?.toString() || '',
+      role: roleMap[profileData.role] || 'BUYER',
+      createdAt: new Date(profileData.createdAt).toISOString(),
+      isActive: profileData.isActive,
+      bio: profileData.bio,
+      physicalAddress: profileData.physicalAddress,
+    };
+  }, [profileData, account]);
+
+  // Update form data when user profile loads
+  React.useEffect(() => {
+    if (user) {
+      setFormData({ name: user.name, country: user.country });
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -34,11 +70,24 @@ export default function ProfilePage() {
       toast.error('All fields are required');
       return;
     }
-    await updateUserMutation.mutateAsync(formData);
-    setIsEditing(false);
+    if (!account?.address) {
+      toast.error('Wallet not connected');
+      return;
+    }
+    
+    try {
+      await updateProfileMutation.mutateAsync({
+        profileAddress: account.address.toString(),
+        name: formData.name,
+        country: formData.country,
+      });
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Update profile error:', error);
+    }
   };
 
-  if (authLoading || !user) {
+  if (authLoading || profileLoading || !user) {
     return (
       <div className='min-h-screen bg-black flex items-center justify-center'>
         <div className='text-center'>
@@ -68,7 +117,7 @@ export default function ProfilePage() {
                     {user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
                   </div>
                 </div>
-                <button onClick={() => setIsEditing(!isEditing)} disabled={updateUserMutation.isPending} className='absolute top-0 right-0 p-2 rounded-lg glass hover:bg-white/10 text-white transition-colors disabled:opacity-50'>
+                <button onClick={() => setIsEditing(!isEditing)} disabled={updateProfileMutation.isPending} className='absolute top-0 right-0 p-2 rounded-lg glass hover:bg-white/10 text-white transition-colors disabled:opacity-50'>
                   {isEditing ? <X className='w-5 h-5' /> : <Edit3 className='w-5 h-5' />}
                 </button>
               </div>
@@ -108,8 +157,8 @@ export default function ProfilePage() {
                 )}
                 {isEditing && (
                   <div className='flex gap-2 pt-2'>
-                    <Button onClick={handleSave} disabled={updateUserMutation.isPending} className='flex-1 bg-[#C6D870] text-black hover:bg-[#B5C760]'>{updateUserMutation.isPending ? <><Loader2 className='w-4 h-4 mr-2 animate-spin' />Saving...</> : <><Save className='w-4 h-4 mr-2' />Save</>}</Button>
-                    <Button onClick={() => { setFormData({ name: user.name || '', country: user.country || '' }); setIsEditing(false); }} disabled={updateUserMutation.isPending} variant='outline' className='flex-1'>Cancel</Button>
+                    <Button onClick={handleSave} disabled={updateProfileMutation.isPending} className='flex-1 bg-[#C6D870] text-black hover:bg-[#B5C760]'>{updateProfileMutation.isPending ? <><Loader2 className='w-4 h-4 mr-2 animate-spin' />Saving...</> : <><Save className='w-4 h-4 mr-2' />Save</>}</Button>
+                    <Button onClick={() => { setFormData({ name: user.name || '', country: user.country || '' }); setIsEditing(false); }} disabled={updateProfileMutation.isPending} variant='outline' className='flex-1'>Cancel</Button>
                   </div>
                 )}
               </div>
@@ -117,13 +166,32 @@ export default function ProfilePage() {
           </div>
           <div className='lg:col-span-2 space-y-6'>
             <div className='grid grid-cols-3 gap-4'>
-              {statsLoading ? (
+              {(ordersLoading || productsLoading) ? (
                 <div className='col-span-3 text-center py-8'><Loader2 className='w-8 h-8 text-[#C6D870] animate-spin mx-auto' /></div>
               ) : (
                 [
-                  { label: user.role === 'SELLER' ? 'Active Listings' : 'Total Orders', value: userStats ? (user.role === 'SELLER' ? userStats.activeListings : userStats.totalOrders) : 0, icon: user.role === 'SELLER' ? Package : ShoppingBag, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-                  { label: user.role === 'SELLER' ? 'Total Earned' : 'Total Spent', value: userStats ? `${userStats.totalAmount.toFixed(2)}` : '0', suffix: 'DATN', icon: DollarSign, color: 'text-[#C6D870]', bg: 'bg-[#C6D870]/10' },
-                  { label: 'Completed', value: userStats ? userStats.completedOrders : 0, icon: Activity, color: 'text-green-500', bg: 'bg-green-500/10' },
+                  { 
+                    label: user.role === 'SELLER' ? 'Active Listings' : 'Total Orders', 
+                    value: user.role === 'SELLER' ? productAddresses.length : orderAddresses.length, 
+                    icon: user.role === 'SELLER' ? Package : ShoppingBag, 
+                    color: 'text-blue-500', 
+                    bg: 'bg-blue-500/10' 
+                  },
+                  { 
+                    label: user.role === 'SELLER' ? 'Total Earned' : 'Total Spent', 
+                    value: '0', // Would need to sum from orders/products
+                    suffix: 'APT', 
+                    icon: DollarSign, 
+                    color: 'text-[#C6D870]', 
+                    bg: 'bg-[#C6D870]/10' 
+                  },
+                  { 
+                    label: 'Active', 
+                    value: user.isActive ? 'Yes' : 'No', 
+                    icon: Activity, 
+                    color: 'text-green-500', 
+                    bg: 'bg-green-500/10' 
+                  },
                 ].map((stat, i) => {
                   const Icon = stat.icon;
                   return (
@@ -143,10 +211,24 @@ export default function ProfilePage() {
               </div>
               {ordersLoading ? (
                 <div className='text-center py-8'><Loader2 className='w-8 h-8 text-[#C6D870] animate-spin mx-auto mb-4' /><p className='text-gray-400'>Loading orders...</p></div>
-              ) : orders && orders.length > 0 ? (
+              ) : orderAddresses && orderAddresses.length > 0 ? (
                 <div className='space-y-4'>
-                  {orders.slice(0, 5).map((order) => (
-                    <Link key={order.id} href={`/order/${order.id}`}><div className='flex items-start gap-4 p-4 rounded-lg glass hover:bg-white/5 transition-colors cursor-pointer'><div className='w-16 h-16 rounded-lg bg-gray-700 shrink-0 overflow-hidden'>{order.product.images && order.product.images[0] ? <img src={order.product.images[0]} alt={order.product.name} className='w-full h-full object-cover' /> : <div className='w-full h-full flex items-center justify-center'><Package className='w-8 h-8 text-gray-500' /></div>}</div><div className='flex-1 min-w-0'><p className='text-white font-medium truncate'>{order.product.name}</p><p className='text-sm text-gray-400 mt-1'>{order.product.category}</p><div className='flex items-center justify-between mt-2'><span className='text-[#C6D870] font-semibold'>{order.product.price} DATN</span><span className='text-xs text-gray-500'>{formatDate(order.createdAt)}</span></div></div><Badge variant={order.status === 'COMPLETED' ? 'lime' : 'default'} className='shrink-0'>{order.status}</Badge></div></Link>
+                  {orderAddresses.slice(0, 5).map((orderAddress) => (
+                    <Link key={orderAddress} href={`/order/${orderAddress}`}>
+                      <div className='flex items-start gap-4 p-4 rounded-lg glass hover:bg-white/5 transition-colors cursor-pointer'>
+                        <div className='w-16 h-16 rounded-lg bg-gray-700 shrink-0 overflow-hidden flex items-center justify-center'>
+                          <Package className='w-8 h-8 text-gray-500' />
+                        </div>
+                        <div className='flex-1 min-w-0'>
+                          <p className='text-white font-medium truncate'>Order #{orderAddress.slice(0, 8)}...</p>
+                          <p className='text-sm text-gray-400 mt-1'>View details</p>
+                          <div className='flex items-center justify-between mt-2'>
+                            <span className='text-[#C6D870] font-semibold text-sm'>Click to view</span>
+                          </div>
+                        </div>
+                        <Badge variant='default' className='shrink-0'>View</Badge>
+                      </div>
+                    </Link>
                   ))}
                 </div>
               ) : (
@@ -161,14 +243,29 @@ export default function ProfilePage() {
                 </div>
                 {productsLoading ? (
                   <div className='text-center py-8'><Loader2 className='w-8 h-8 text-[#C6D870] animate-spin mx-auto mb-4' /><p className='text-gray-400'>Loading products...</p></div>
-                ) : products && products.length > 0 ? (
+                ) : productAddresses && productAddresses.length > 0 ? (
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                    {products.slice(0, 4).map((product) => (
-                      <Link key={product.id} href={`/product/${product.id}`}><div className='p-4 rounded-lg glass hover:bg-white/5 transition-colors cursor-pointer'><div className='flex gap-4'><div className='w-20 h-20 rounded-lg bg-gray-700 shrink-0 overflow-hidden'>{product.images && product.images[0] ? <img src={product.images[0]} alt={product.name} className='w-full h-full object-cover' /> : <div className='w-full h-full flex items-center justify-center'><Package className='w-8 h-8 text-gray-500' /></div>}</div><div className='flex-1 min-w-0'><h4 className='text-white font-medium mb-1 truncate'>{product.name}</h4><p className='text-sm text-gray-400 mb-2'>{product.category}</p><div className='flex items-center justify-between'><span className='text-[#C6D870] font-semibold'>{product.price} DATN</span><Badge variant={product.isAvailable ? 'lime' : 'default'} className='text-xs'>{product.isAvailable ? 'Active' : 'Inactive'}</Badge></div><p className='text-xs text-gray-500 mt-1'>Stock: {product.quantity}</p></div></div></div></Link>
+                    {productAddresses.slice(0, 4).map((productAddress) => (
+                      <Link key={productAddress} href={`/product/${productAddress}`}>
+                        <div className='p-4 rounded-lg glass hover:bg-white/5 transition-colors cursor-pointer'>
+                          <div className='flex gap-4'>
+                            <div className='w-20 h-20 rounded-lg bg-gray-700 shrink-0 overflow-hidden flex items-center justify-center'>
+                              <Package className='w-8 h-8 text-gray-500' />
+                            </div>
+                            <div className='flex-1 min-w-0'>
+                              <h4 className='text-white font-medium mb-1 truncate'>Product #{productAddress.slice(0, 8)}...</h4>
+                              <p className='text-sm text-gray-400 mb-2'>View details</p>
+                              <div className='flex items-center justify-between'>
+                                <span className='text-[#C6D870] font-semibold text-sm'>Click to view</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
                     ))}
                   </div>
                 ) : (
-                  <div className='text-center py-8'><Package className='w-12 h-12 text-gray-600 mx-auto mb-4' /><p className='text-gray-400'>No products listed yet</p><Button size='sm' className='mt-4 bg-[#C6D870] text-black hover:bg-[#B5C760]'>Create Listing</Button></div>
+                  <div className='text-center py-8'><Package className='w-12 h-12 text-gray-600 mx-auto mb-4' /><p className='text-gray-400'>No products listed yet</p><Link href='/seller/products'><Button size='sm' className='mt-4 bg-[#C6D870] text-black hover:bg-[#B5C760]'>Create Listing</Button></Link></div>
                 )}
               </Card>
             )}
