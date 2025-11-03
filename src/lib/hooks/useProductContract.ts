@@ -55,17 +55,52 @@ type ProductListItem = {
 };
 
 /**
- * Hook to get all products (from indexer or aggregated from sellers)
- * Note: This is a placeholder - you should implement an indexer or aggregation service
+ * Hook to get all products from the global registry
  */
 export const useAllProducts = () => {
   return useQuery<ProductListItem[]>({
     queryKey: productKeys.lists(),
     queryFn: async (): Promise<ProductListItem[]> => {
-      // TODO: Implement indexer query or aggregate from known sellers
-      // For now, return empty array - implement indexer integration
-      console.warn('useAllProducts: Indexer not yet implemented. Return empty products array.');
-      return [];
+      try {
+        // Fetch all product addresses from global registry
+        const productAddresses = await productContract.getAllProducts();
+        
+        if (!productAddresses || productAddresses.length === 0) {
+          return [];
+        }
+
+        // Fetch details for each product in parallel
+        const productPromises = productAddresses.map((address: string) => 
+          productContract.getProduct(address)
+        );
+        
+        const products = await Promise.all(productPromises);
+        
+        // Transform to ProductListItem format
+        return products
+          .filter((product): product is NonNullable<typeof product> => 
+            product !== null && !product.isDeleted && product.isAvailable
+          )
+          .map(product => ({
+            id: product.productAddress,
+            name: product.title,
+            description: product.description,
+            price: product.price,
+            images: product.imageUrls,
+            category: product.category,
+            isAvailable: product.isAvailable,
+            quantity: product.quantity,
+            createdAt: product.createdAt.toString(),
+            updatedAt: product.updatedAt.toString(),
+            user: {
+              name: 'Seller', // TODO: Fetch seller profile
+              role: 'seller',
+            },
+          }));
+      } catch (error) {
+        console.error('Error fetching all products:', error);
+        return [];
+      }
     },
     staleTime: 5 * 60 * 1000,
   });
